@@ -89,14 +89,12 @@ def parse_donations(soup):
             filter(lambda x: x in printable, raw_donation_message)
         )
 
-        # Structure
-        # ("timestamp", "author", "amount", "comment")
-        donation = (
-            raw_donation_timestamp,
-            raw_donation_author,
-            raw_donation_amount,
-            raw_donation_message,
-        )
+        donation = {
+            "amount": raw_donation_amount,
+            "author": raw_donation_author,
+            "message": raw_donation_message,
+            "timestamp": raw_donation_timestamp,
+        }
         donations.append(donation)
 
     return donations
