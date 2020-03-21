@@ -10,6 +10,7 @@ def main():
     for war in bidwars:
         print(war)
 
+
 def get_bidwars(marathon_url):
     try:
         url = "https://www.speedrun.com/" + marathon_url + "/donate/bidwars"

@@ -17,7 +17,7 @@ pip install bs4 requests
 Fetch all bidwars from Hekathon 19 and print them:
 
 ```
-import get_bidwars from bidwar-parser
+from bidwar_parser import get_bidwars
 
 bidwars = get_bidwars("hek19")
 for bidwar in bidwars:
