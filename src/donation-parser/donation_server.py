@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from donation_parser import get_donations
 
@@ -7,8 +7,9 @@ CORS(app)
 
 
 @app.route("/")
-def hello_world():
-    donations = get_donations("hek19", "1556490705")
+def donations():
+    date = request.args.get("date")
+    donations = get_donations("hek19", date)
     return jsonify(donations=donations)
 
 

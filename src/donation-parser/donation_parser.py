@@ -12,14 +12,12 @@ def main():
         print(donation)
 
 
-def get_donations(marathon_url, since_epoch_timestamp):
+def get_donations(marathon_url, since_epoch_timestamp=None):
     try:
-        url = (
-            "https://www.speedrun.com/ajax_donations.php?marathon="
-            + marathon_url
-            + "&date="
-            + since_epoch_timestamp
-        )
+        url = "https://www.speedrun.com/ajax_donations.php?marathon=" + marathon_url
+        if since_epoch_timestamp is not None and since_epoch_timestamp.isdigit():
+            url += "&date=" + since_epoch_timestamp
+
         response = requests.get(url, timeout=5)
         soup = BeautifulSoup(response.content, "html.parser")
         return parse_donations(soup)
@@ -29,35 +27,40 @@ def get_donations(marathon_url, since_epoch_timestamp):
         sys.exit(1)
 
 
+def parse_raw_lines(donation_item):
+    printable = set(string.printable)
+
+    lines = []
+    for entry in donation_item:
+        if entry is None:
+            continue
+
+        raw_lines = str(entry).strip().split("\n")
+
+        for raw_line in raw_lines:
+            raw_line_printable = "".join(filter(lambda x: x in printable, raw_line))
+            lines.append(raw_line_printable)
+
+    return lines
+
+
 def parse_donations(soup):
     printable = set(string.printable)
 
     donations = []
 
-    # Merge all read lines into one group
-    # Parsingt the lines with bs4 will remove broken HTML and other nastiness
-    lines = []
-
     for donation_item in list(soup.children):
-        lines = []
-        for entry in donation_item:
-            if entry is None:
-                continue
-
-            raw_lines = str(entry).strip().split("\n")
-
-            for raw_line in raw_lines:
-                raw_line_printable = "".join(filter(lambda x: x in printable, raw_line))
-                lines.append(raw_line_printable)
+        lines = parse_raw_lines(donation_item)
 
         # BeautifulSoup creates some empty-ish DOM elements every now
         # and then, skip them
         if len(lines) < 10:
             continue
 
-        # Skip the donation total
+        # When fetching all donations, there is an extra element at the start
         if len(list(donation_item.children)) < 5:
-            continue
+            donation_item = list(donation_item.children)[1]
+            lines = parse_raw_lines(donation_item)
 
         # Parse the donation author
         raw_donation_author = lines[2]
@@ -71,6 +74,10 @@ def parse_donations(soup):
         soup = BeautifulSoup(raw_donation_amount, "html.parser")
         raw_donation_amount = soup.string
 
+        raw_donation_timestamp = lines[7]
+        soup = BeautifulSoup(raw_donation_timestamp, "html.parser")
+        raw_donation_timestamp = soup.td.time["datetime"]
+
         raw_donation_message = (
             list(donation_item.children)[7]
             .string.replace("\r", " ")
@@ -82,9 +89,14 @@ def parse_donations(soup):
             filter(lambda x: x in printable, raw_donation_message)
         )
 
-        # Example structure
-        # ("author", "amount", "comment")
-        donation = (raw_donation_author, raw_donation_amount, raw_donation_message)
+        # Structure
+        # ("timestamp", "author", "amount", "comment")
+        donation = (
+            raw_donation_timestamp,
+            raw_donation_author,
+            raw_donation_amount,
+            raw_donation_message,
+        )
         donations.append(donation)
 
     return donations
