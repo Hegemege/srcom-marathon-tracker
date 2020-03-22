@@ -9,14 +9,16 @@ CORS(app)
 
 @app.route("/donations")
 def donations():
+    marathon = request.args.get("marathon")
     date = request.args.get("date")
-    donations = get_donations("hek19", date)
+    donations = get_donations(marathon, date)
     return jsonify(donations=donations)
 
 
 @app.route("/bidwars")
 def bidwars():
-    bidwars = get_bidwars("hek19", date)
+    marathon = request.args.get("marathon")
+    bidwars = get_bidwars(marathon)
     return jsonify(bidwars=bidwars)
 
 
