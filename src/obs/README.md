@@ -1,3 +1,3 @@
 # Marathon tracker
 
-A simple HTML Source for OBS for retrieving the marathon total from a remote source
+Browser source files for displaying tracker information provided by a tracker server

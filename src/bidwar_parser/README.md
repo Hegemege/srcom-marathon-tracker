@@ -4,12 +4,12 @@ Python script for fetching and parsing information about bidwars of a marathon.
 
 ## Requirements
 
-Python 3 + packages `bs4` and `requests`.
+Python 3 + some packages (see `requirements.txt`)
 
-Recommended to install with pip:
+Recommended to setup a virtualenv and install using pip:
 
 ```
-pip install bs4 requests
+pip install -r requirements.txt
 ```
 
 ## Usage example

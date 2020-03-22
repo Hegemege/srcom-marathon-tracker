@@ -2,11 +2,11 @@
 
 Various scripts and tools useful for tracking marathons on speedrun.com
 
-## [Bidwar parser](src/bidwar-parser/)
+## [Bidwar parser](src/bidwar_parser/)
 
 Tools for parsing bidwars
 
-## [Donation parser](src/donation-parser/)
+## [Donation parser](src/donation_parser/)
 
 Tools for parsing donations
 
