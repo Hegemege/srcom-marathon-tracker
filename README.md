@@ -4,12 +4,16 @@ Various scripts and tools useful for tracking marathons on speedrun.com
 
 ## [Bidwar parser](src/bidwar_parser/)
 
-Tools for parsing bidwars
+Tools for parsing bidwars.
 
 ## [Donation parser](src/donation_parser/)
 
-Tools for parsing donations
+Tools for parsing donations.
 
-## [Generic marathon tracker for OBS](src/obs/)
+## [Marathon tracker](src/marathon_tracker/)
+
+Tools for tracking the total donation amount.
+
+## [OBS Browser sources](src/obs/)
 
 Browser source files for OBS to display trackers
