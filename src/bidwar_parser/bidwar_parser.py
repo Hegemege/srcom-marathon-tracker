@@ -11,15 +11,15 @@ def main():
         print(war)
 
 
-def get_bidwars(marathon_url):
+def get_bidwars(marathon_uri):
     try:
-        url = "https://www.speedrun.com/" + marathon_url + "/donate/bidwars"
+        url = "https://www.speedrun.com/" + marathon_uri + "/donate/bidwars"
         response = requests.get(url, timeout=5)
         soup = BeautifulSoup(response.content, "html.parser")
         return parse_bidwars(soup)
-    except:
+    except Exception as e:
         print("Parsing bidwars failed")
-        sys.exit(1)
+        raise e
 
 
 def parse_bidwars(soup):

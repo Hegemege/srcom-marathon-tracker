@@ -12,7 +12,7 @@ Recommended to setup a virtualenv and install using pip:
 pip install -r requirements.txt
 ```
 
-## `donation_parser` usage example
+## Usage example
 
 Fetch all donations since 1556490705 (April 28th 2019 10:31:45 PM GMT) from Hekathon 19 and print them:
 

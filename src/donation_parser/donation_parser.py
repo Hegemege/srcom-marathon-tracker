@@ -12,9 +12,9 @@ def main():
         print(donation)
 
 
-def get_donations(marathon_url, since_epoch_timestamp=None):
+def get_donations(marathon_uri, since_epoch_timestamp=None):
     try:
-        url = "https://www.speedrun.com/ajax_donations.php?marathon=" + marathon_url
+        url = "https://www.speedrun.com/ajax_donations.php?marathon=" + marathon_uri
         if since_epoch_timestamp is not None and since_epoch_timestamp.isdigit():
             url += "&date=" + since_epoch_timestamp
 
@@ -23,8 +23,7 @@ def get_donations(marathon_url, since_epoch_timestamp=None):
         return parse_donations(soup)
     except BaseException as e:
         print("Parsing donations failed")
-        print(e)
-        sys.exit(1)
+        raise e
 
 
 def parse_raw_lines(donation_item):

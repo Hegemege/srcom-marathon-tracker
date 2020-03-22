@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from ..donation_parser.donation_parser import get_donations
 from ..bidwar_parser.bidwar_parser import get_bidwars
+from ..marathon_tracker.marathon_tracker import get_marathon_total
 
 app = Flask(__name__)
 CORS(app)
@@ -20,6 +21,13 @@ def bidwars():
     marathon = request.args.get("marathon")
     bidwars = get_bidwars(marathon)
     return jsonify(bidwars=bidwars)
+
+
+@app.route("/marathon-total")
+def marathon_total():
+    marathon = request.args.get("marathon")
+    total = get_marathon_total(marathon)
+    return jsonify(total=total)
 
 
 if __name__ == "__main__":
