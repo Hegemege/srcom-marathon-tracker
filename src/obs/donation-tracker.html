@@ -8,21 +8,36 @@
             overflow: hidden;
         }
 
-        .tracker-container {
+        .main-container {
+            height: 100%;
             display: flex;
-            justify-content: center;
-            width: 200px;
+            flex-direction: column;
+            justify-content: flex-start;
         }
 
-        #tracker {
-            color: green;
-            font-size: 100px;
-            font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+        .donation-container {
+            margin-left: 1em;
+            margin-right: 1em;
+            margin-bottom: 2em;
+            display: flex;
+            align-self: center;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        #donation-popup {
+            align-self: flex-end;
+            position: relative;
+            display: inline;
+            bottom: 0;
+            color: yellow;
+            font-size: 40px;
+            font-family: "Futura PT";
         }
 
         .animated {
             animation-name: donation-popup;
-            animation-duration: 3s;
+            animation-duration: 1s;
             animation-iteration-count: infinite;
         }
 
@@ -30,50 +45,62 @@
             0% {
                 bottom: -20px;
                 color: rgba(0, 0, 0, 0);
-                font-size: 20px;
             }
 
             20% {
-                color: rgba(0, 255, 0, 1.0);
-                font-size: 100px;
+                bottom: 0px;
+                color: rgba(255, 255, 0, 1.0);
             }
 
-            60% {
+            80% {
                 bottom: 0px;
-                color: rgba(64, 255, 0, 1.0);
-                font-size: 100px;
+                color: rgba(255, 255, 0, 1.0);
             }
 
             100% {
                 bottom: 10px;
                 color: rgba(255, 255, 0, 0);
-                font-size: 20px;
             }
         }
     </style>
 </head>
 
 <body>
-    <div class="tracker-container">
-        <span id="tracker"></span>
+    <div class="main-container">
+        <div class="donation-container">
+            <span id="donation-popup"></span>
+        </div>
     </div>
 
 
     <script type="text/javascript">
-        var urlBase = "http://localhost:8090/donations?marathon=hek19&date=";
-        var fetchInterval = 10 * 1000; // 10 seconds (in milliseconds)
-        var donationPopupInterval = 3 * 1000; // Every donation popup stays for 3 seconds
+        var urlBase = "http://localhost:8090/donations?marathon=hek20&date=";
+        var fetchInterval = 10 * 1000;
+        var donationPopupInterval = 1 * 1000;
 
         var donationCache = {};
-        var donationPipe = []; // FIFO
-        var trackerElement = document.getElementById("tracker");
+        var donationQueue = []; // Donations to be displayed
+        var donationPopupElement = document.getElementById("donation-popup");
+        var startEpochTimestamp = Date.now() / 1000;
 
-        // Fetches all donations since the given timestamp.
-        // Because donations need to be approved, this should be maybe 30-60 behind current time
-        var epochTimestamp = 1556490705; // TODO
+        var runningPopup = null;
 
-        var updateTrackerData = function () {
+        var getEpochTimestamp = function (offsetSeconds) {
+            return Math.floor((Date.now() / 1000) + offsetSeconds);
+        }
+
+        var updateDonationsData = function () {
             const request = new XMLHttpRequest();
+
+            // Fetches all donations since the given timestamp.
+            // Because donations need to be approved, this should be maybe
+            // 30-60 minutes behind current time in order for mods to have enough time time to update
+            // The donation cache makes sure donations aren't received multiple times
+            // -3600 is the number of seconds 1 hour ago as an offset
+            let epochTimestamp = getEpochTimestamp(-3600 * 3);
+
+            // The script will repeat donations from a few hours ago
+
             request.open("GET", urlBase + epochTimestamp);
             request.send();
             request.onreadystatechange = e => {
@@ -92,28 +119,64 @@
                     }
 
                     donationCache[key] = donation;
-                    donationPipe.push(donation);
+                    donationQueue.push(donation);
+                }
+
+                // Go through the cache and assign all donations as inactive
+                // Assign all the new donations as active
+                for (let key in donationCache) {
+                    if (donationCache.hasOwnProperty(key)) {
+                        donation = donationCache[key];
+                        donation.active = false;
+                    }
+                }
+
+                for (let i = 0; i < data.donations.length; i++) {
+                    let donation = data.donations[i];
+                    let key = donation.timestamp + donation.author;
+                    donationCache[key].active = true;
+                }
+
+                if (runningPopup == null) {
+                    displayNewDonations();
+                    runningPopup = setInterval(displayNewDonations, donationPopupInterval);
                 }
             };
         }
 
         var displayNewDonations = function () {
-            if (donationPipe.length == 0) {
-                trackerElement.classList.remove('animated');
-                trackerElement.innerHTML = "";
+            if (donationQueue.length == 0) {
+                donationPopupElement.classList.remove('animated');
+                donationPopupElement.innerHTML = "";
                 return;
             }
 
-            trackerElement.classList.add('animated');
+
 
             // Pull the newest donation from the pipe and display it
-            let donation = donationPipe.pop(0);
-            trackerElement.innerHTML = "+" + donation.amount;
+            // If the donation is inactive, pull the next one
+            let donation = null;
+            do {
+                donation = donationQueue.shift();
+            } while (donationQueue.length > 0 && donation != null && !donation.active)
+
+            // If we couldn't find a donation or the last one was inactive
+            // don't show any donations for now
+            if (donation == null || !donation.active) {
+                return;
+            }
+
+            // Add the donation back to the end
+            donationQueue.push(donation);
+
+            donationPopupElement.classList.add('animated');
+
+            let message = donation.message.length > 0 ? donation.message : "(no message)";
+            donationPopupElement.innerHTML = donation.author + " (" + donation.amount + "): " + message;
         }
 
-        updateTrackerData(); // Update immediately on page load
-        setInterval(updateTrackerData, fetchInterval); // Update after the given interval
-        setInterval(displayNewDonations, donationPopupInterval);
+        updateDonationsData(); // Update immediately on page load
+        setInterval(updateDonationsData, fetchInterval); // Update after the given interval
     </script>
 </body>
 
