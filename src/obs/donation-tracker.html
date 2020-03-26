@@ -30,14 +30,23 @@
             position: relative;
             display: inline;
             bottom: 0;
-            color: yellow;
             font-size: 40px;
             font-family: "Futura PT";
         }
 
+        #donation-author {
+            color: #f9ec0e;
+            text-align: right;
+        }
+
+        #donation-message {
+            color: white;
+            text-align: left;
+        }
+
         .animated {
             animation-name: donation-popup;
-            animation-duration: 1s;
+            animation-duration: 12s;
             animation-iteration-count: infinite;
         }
 
@@ -47,14 +56,14 @@
                 color: rgba(0, 0, 0, 0);
             }
 
-            20% {
+            15% {
                 bottom: 0px;
-                color: rgba(255, 255, 0, 1.0);
+                color: #f9ec0e;
             }
 
-            80% {
+            85% {
                 bottom: 0px;
-                color: rgba(255, 255, 0, 1.0);
+                color: #f9ec0e;
             }
 
             100% {
@@ -68,19 +77,24 @@
 <body>
     <div class="main-container">
         <div class="donation-container">
-            <span id="donation-popup"></span>
+            <div id="donation-popup">
+                <span id="donation-author"></span>
+                <span id="donation-message"></span>
+            </div>
         </div>
     </div>
 
 
     <script type="text/javascript">
         var urlBase = "http://localhost:8090/donations?marathon=hek20&date=";
-        var fetchInterval = 10 * 1000;
-        var donationPopupInterval = 1 * 1000;
+        var fetchInterval = 20 * 1000;
+        var donationPopupInterval = 12 * 1000;
 
         var donationCache = {};
         var donationQueue = []; // Donations to be displayed
         var donationPopupElement = document.getElementById("donation-popup");
+        var donationAuthorElement = document.getElementById("donation-author");
+        var donationMessageElement = document.getElementById("donation-message");
         var startEpochTimestamp = Date.now() / 1000;
 
         var runningPopup = null;
@@ -147,7 +161,8 @@
         var displayNewDonations = function () {
             if (donationQueue.length == 0) {
                 donationPopupElement.classList.remove('animated');
-                donationPopupElement.innerHTML = "";
+                donationAuthorElement.innerHTML = "";
+                donationMessageElement.innerHTML = "";
                 return;
             }
 
@@ -171,8 +186,10 @@
 
             donationPopupElement.classList.add('animated');
 
+
             let message = donation.message.length > 0 ? donation.message : "(no message)";
-            donationPopupElement.innerHTML = donation.author + " (" + donation.amount + "): " + message;
+            donationAuthorElement.innerHTML = donation.author + " (" + donation.amount + "): ";
+            donationMessageElement.innerHTML = message;
         }
 
         updateDonationsData(); // Update immediately on page load
