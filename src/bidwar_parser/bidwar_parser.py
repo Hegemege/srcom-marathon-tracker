@@ -12,14 +12,10 @@ def main():
 
 
 def get_bidwars(marathon_uri):
-    try:
-        url = "https://www.speedrun.com/" + marathon_uri + "/donate/bidwars"
-        response = requests.get(url, timeout=5)
-        soup = BeautifulSoup(response.content, "html.parser")
-        return parse_bidwars(soup)
-    except Exception as e:
-        print("Parsing bidwars failed")
-        raise e
+    url = "https://www.speedrun.com/" + marathon_uri + "/donate/bidwars"
+    response = requests.get(url, timeout=5)
+    soup = BeautifulSoup(response.content, "html.parser")
+    return parse_bidwars(soup)
 
 
 def parse_bidwars(soup):

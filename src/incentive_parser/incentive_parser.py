@@ -12,14 +12,10 @@ def main():
 
 
 def get_incentives(marathon_uri):
-    try:
-        url = "https://www.speedrun.com/" + marathon_uri + "/donate/goals"
-        response = requests.get(url, timeout=5)
-        soup = BeautifulSoup(response.content, "html.parser")
-        return parse_incentives(soup)
-    except Exception as e:
-        print("Parsing incentives failed")
-        raise e
+    url = "https://www.speedrun.com/" + marathon_uri + "/donate/goals"
+    response = requests.get(url, timeout=5)
+    soup = BeautifulSoup(response.content, "html.parser")
+    return parse_incentives(soup)
 
 
 def get_printable(input_string):
