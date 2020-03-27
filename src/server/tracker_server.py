@@ -3,6 +3,7 @@ from flask_cors import CORS
 from ..donation_parser.donation_parser import get_donations
 from ..bidwar_parser.bidwar_parser import get_bidwars
 from ..marathon_tracker.marathon_tracker import get_marathon_total
+from ..incentive_parser.incentive_parser import get_incentives
 
 app = Flask(__name__)
 CORS(app)
@@ -28,6 +29,13 @@ def marathon_total():
     marathon = request.args.get("marathon")
     total = get_marathon_total(marathon)
     return jsonify(total=total)
+
+
+@app.route("/incentives")
+def incentives():
+    marathon = request.args.get("marathon")
+    incentives = get_incentives(marathon)
+    return jsonify(incentives=incentives)
 
 
 if __name__ == "__main__":
