@@ -1,0 +1,173 @@
+<html>
+
+<head>
+    <style>
+        body {
+            background-color: rgba(0, 0, 0, 0);
+            margin: 0px auto;
+            overflow: hidden;
+        }
+
+        .main-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+
+        .bidwar-container {
+            margin-left: 1em;
+            margin-right: 1em;
+            margin-bottom: 2em;
+            display: flex;
+            align-self: center;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        #bidwar-popup {
+            align-self: flex-end;
+            position: relative;
+            display: inline;
+            bottom: 0;
+            font-size: 40px;
+            font-family: "Futura PT";
+        }
+
+        #bidwar-author {
+            color: #f9ec0e;
+            text-align: right;
+        }
+
+        #bidwar-message {
+            color: white;
+            text-align: left;
+        }
+
+        .animated {
+            animation-name: bidwar-popup;
+            animation-duration: 30s;
+            animation-iteration-count: infinite;
+        }
+
+        @keyframes bidwar-popup {
+            0% {
+                left: -20px;
+                color: rgba(0, 0, 0, 0);
+            }
+
+            15% {
+                left: 0px;
+                color: #f9ec0e;
+            }
+
+            85% {
+                left: 0px;
+                color: #f9ec0e;
+            }
+
+            100% {
+                left: 10px;
+                color: rgba(255, 255, 0, 0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-container">
+        <div class="bidwar-container">
+            <div id="bidwar-popup">
+                <span id="bidwar-author"></span>
+                <span id="bidwar-message"></span>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="text/javascript">
+        var urlBase = "http://localhost:8090/bidwars?marathon=hek20";
+        var fetchInterval = 20 * 1000;
+        var bidwarPopupInterval = 30 * 1000;
+
+        var bidwarCache = {};
+        var bidwarQueue = []; // Bidwars to be displayed
+        var bidwarPopupElement = document.getElementById("bidwar-popup");
+        var bidwarAuthorElement = document.getElementById("bidwar-author");
+        var bidwarMessageElement = document.getElementById("bidwar-message");
+        var startEpochTimestamp = Date.now() / 1000;
+
+        var runningPopup = null;
+
+        var updateBidwarsData = function () {
+            const request = new XMLHttpRequest();
+
+            // Fetches all bidwars since the given timestamp.
+            // The script will repeat bidwars from a few hours ago
+
+            request.open("GET", urlBase);
+            request.send();
+            request.onreadystatechange = e => {
+                if (e.target.readyState !== 4 || e.target.status !== 200) return;
+                if (request.responseText.length == 0) return;
+
+                let data = JSON.parse(request.responseText);
+
+                // Go through the received bidwars and see if any are missing from the cache
+                // If they are, add them to the popup queue
+                for (let i = 0; i < data.bidwars.length; i++) {
+                    let bidwar = data.bidwars[i];
+                    let key = bidwar.timestamp + bidwar.author;
+                    if (key in bidwarCache) {
+                        continue;
+                    }
+
+                    bidwarCache[key] = bidwar;
+                    bidwarQueue.push(bidwar);
+                }
+
+                if (runningPopup == null) {
+                    displayNextBidwars();
+                    runningPopup = setInterval(displayNextBidwars, bidwarPopupInterval);
+                }
+            };
+        }
+
+        var displayNextBidwars = function () {
+            if (bidwarQueue.length == 0) {
+                bidwarPopupElement.classList.remove('animated');
+                bidwarAuthorElement.innerHTML = "";
+                bidwarMessageElement.innerHTML = "";
+                return;
+            }
+
+            // Pull the newest bidwar from the pipe and display it
+            // If the bidwar is inactive, pull the next one
+            let bidwar = null;
+            do {
+                bidwar = bidwarQueue.shift();
+            } while (bidwarQueue.length > 0 && bidwar != null && !bidwar.active)
+
+            // If we couldn't find a bidwar or the last one was inactive
+            // don't show any bidwars for now
+            if (bidwar == null || !bidwar.active) {
+                return;
+            }
+
+            // Add the bidwar back to the end
+            bidwarQueue.push(bidwar);
+
+            bidwarPopupElement.classList.add('animated');
+
+
+            let message = bidwar.message.length > 0 ? bidwar.message : "(no message)";
+            bidwarAuthorElement.innerHTML = bidwar.author + " (" + bidwar.amount + "): ";
+            bidwarMessageElement.innerHTML = message;
+        }
+
+        updateBidwarsData(); // Update immediately on page load
+        setInterval(updateBidwarsData, fetchInterval); // Update after the given interval
+    </script>
+</body>
+
+</html>

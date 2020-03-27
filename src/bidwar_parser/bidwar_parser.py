@@ -36,7 +36,7 @@ def parse_bidwars(soup):
     bidwars = []
 
     # Merge all read lines into one group
-    # Parsingt the lines with bs4 will remove broken HTML and other nastiness
+    # Parsing the lines with bs4 will remove broken HTML and other nastiness
     lines = []
     for item in list(soup.children):
         group_line = item.encode("utf-8").decode("utf-8")

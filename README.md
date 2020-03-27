@@ -10,6 +10,10 @@ Tools for parsing bidwars.
 
 Tools for parsing donations.
 
+## [Incentive parser](src/incentive_parser/)
+
+Tools for parsing donation incentives.
+
 ## [Marathon tracker](src/marathon_tracker/)
 
 Tools for tracking the total donation amount.
