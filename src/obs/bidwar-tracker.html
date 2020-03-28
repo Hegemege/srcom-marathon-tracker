@@ -3,19 +3,19 @@
 <head>
     <style>
         body {
-            background-color: rgba(0, 0, 0, 0);
+            background-color: rgba(0, 0, 0, 1);
             margin: 0px auto;
             overflow: hidden;
         }
 
-        .main-container {
+        #main-container {
             height: 100%;
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
         }
 
-        .bidwar-container {
+        #bidwar-container {
             margin-left: 1em;
             margin-right: 1em;
             margin-bottom: 2em;
@@ -34,52 +34,70 @@
             font-family: "Futura PT";
         }
 
-        #bidwar-author {
+        #bidwar-title {
             color: #f9ec0e;
-            text-align: right;
         }
 
-        #bidwar-message {
+        #bidwar-categories-container {}
+
+        .bidwar-category-row {}
+
+        .bidwar-category-title {
             color: white;
-            text-align: left;
+        }
+
+        .bidwar-category-bar {
+            height: 40px;
+            background-color: white;
+        }
+
+        .bidwar-category-donated {
+            color: #f9ec0e;
+            font-size: 28px;
+            right: -30px;
+            text-align: right;
         }
 
         .animated {
             animation-name: bidwar-popup;
-            animation-duration: 30s;
+            animation-duration: 5s;
             animation-iteration-count: infinite;
         }
 
         @keyframes bidwar-popup {
             0% {
                 left: -20px;
-                color: rgba(0, 0, 0, 0);
+                opacity: 0;
             }
 
-            15% {
+            10% {
                 left: 0px;
-                color: #f9ec0e;
+                opacity: 1;
             }
 
-            85% {
+            90% {
                 left: 0px;
-                color: #f9ec0e;
+                opacity: 1;
             }
 
             100% {
                 left: 10px;
-                color: rgba(255, 255, 0, 0);
+                opacity: 0;
             }
         }
     </style>
 </head>
 
 <body>
-    <div class="main-container">
-        <div class="bidwar-container">
+    <div id="main-container">
+        <div id="bidwar-container">
             <div id="bidwar-popup">
-                <span id="bidwar-author"></span>
-                <span id="bidwar-message"></span>
+                <div id="bidwar-title-container">
+                    <span id="bidwar-title"></span>
+                </div>
+                <div id="bidwar-categories-container">
+
+                </div>
             </div>
         </div>
     </div>
@@ -88,13 +106,13 @@
     <script type="text/javascript">
         var urlBase = "http://localhost:8090/bidwars?marathon=hek20";
         var fetchInterval = 20 * 1000;
-        var bidwarPopupInterval = 30 * 1000;
+        var bidwarPopupInterval = 5 * 1000;
 
         var bidwarCache = {};
         var bidwarQueue = []; // Bidwars to be displayed
         var bidwarPopupElement = document.getElementById("bidwar-popup");
-        var bidwarAuthorElement = document.getElementById("bidwar-author");
-        var bidwarMessageElement = document.getElementById("bidwar-message");
+        var bidwarTitleElement = document.getElementById("bidwar-title");
+        var bidwarCategoriesElement = document.getElementById("bidwar-categories-container");
         var startEpochTimestamp = Date.now() / 1000;
 
         var runningPopup = null;
@@ -117,10 +135,11 @@
                 // If they are, add them to the popup queue
                 for (let i = 0; i < data.bidwars.length; i++) {
                     let bidwar = data.bidwars[i];
-                    let key = bidwar.timestamp + bidwar.author;
+                    let key = bidwar.title;
                     if (key in bidwarCache) {
                         // Update the categories with new values
                         bidwarCache[key].categories = bidwar.categories;
+                        bidwarCache[key].closed = bidwar.closed;
                         continue;
                     }
 
@@ -138,8 +157,8 @@
         var displayNextBidwars = function () {
             if (bidwarQueue.length == 0) {
                 bidwarPopupElement.classList.remove('animated');
-                bidwarAuthorElement.innerHTML = "";
-                bidwarMessageElement.innerHTML = "";
+                bidwarTitleElement.innerHTML = "";
+                bidwarCategoriesElement.innerHTML = "";
                 return;
             }
 
@@ -148,11 +167,11 @@
             let bidwar = null;
             do {
                 bidwar = bidwarQueue.shift();
-            } while (bidwarQueue.length > 0 && bidwar != null && !bidwar.active)
+            } while (bidwarQueue.length > 0 && bidwar != null && bidwar.closed)
 
             // If we couldn't find a bidwar or the last one was inactive
             // don't show any bidwars for now
-            if (bidwar == null || !bidwar.active) {
+            if (bidwar == null || bidwar.closed) {
                 return;
             }
 
@@ -161,10 +180,23 @@
 
             bidwarPopupElement.classList.add('animated');
 
+            // Update the bidwar title
+            bidwarTitleElement.innerHTML = bidwar.title;
 
-            let message = bidwar.message.length > 0 ? bidwar.message : "(no message)";
-            bidwarAuthorElement.innerHTML = bidwar.author + " (" + bidwar.amount + "): ";
-            bidwarMessageElement.innerHTML = message;
+            let bidwarCategoryRowTemplate =
+                "<div class='bidwar-category-row'><span class='bidwar-category-title'>{0}</span><div class='bidwar-category-bar'><span class='bidwar-category-donated'>{1}</span></div></div>";
+
+            // Loop through all categories and add them under the categories element
+            if (bidwar.categories.length == 0) {
+                bidwarCategoriesElement.innerHTML =
+                    "<div class='bidwar-category-row'><span class='bidwar-category-title'>No bids :(</span></div>";
+            } else {
+                let rowHTML = "";
+                for (let category of bidwar.categories) {
+
+                }
+                bidwarCategoriesElement.innerHTML = rowHTML;
+            }
         }
 
         updateBidwarsData(); // Update immediately on page load

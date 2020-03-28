@@ -98,9 +98,7 @@ def parse_bidwars(soup):
             # -1 to take away the last space between the category name and the parenthesis
             category = line.strip()[: end_index - 1]
 
-            current_bidwar["categories"].append(
-                {"category": category, "donated": donated}
-            )
+            current_bidwar["categories"].append({"title": category, "donated": donated})
 
     # Add last bidwar
     if current_bidwar is not None:
