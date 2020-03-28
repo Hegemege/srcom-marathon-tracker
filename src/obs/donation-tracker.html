@@ -95,7 +95,6 @@
         var donationPopupElement = document.getElementById("donation-popup");
         var donationAuthorElement = document.getElementById("donation-author");
         var donationMessageElement = document.getElementById("donation-message");
-        var startEpochTimestamp = Date.now() / 1000;
 
         var runningPopup = null;
 
@@ -159,15 +158,6 @@
         }
 
         var displayNewDonations = function () {
-            if (donationQueue.length == 0) {
-                donationPopupElement.classList.remove('animated');
-                donationAuthorElement.innerHTML = "";
-                donationMessageElement.innerHTML = "";
-                return;
-            }
-
-
-
             // Pull the newest donation from the pipe and display it
             // If the donation is inactive, pull the next one
             let donation = null;
@@ -178,6 +168,9 @@
             // If we couldn't find a donation or the last one was inactive
             // don't show any donations for now
             if (donation == null || !donation.active) {
+                donationPopupElement.classList.remove('animated');
+                donationAuthorElement.innerHTML = "";
+                donationMessageElement.innerHTML = "";
                 return;
             }
 

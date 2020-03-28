@@ -117,7 +117,6 @@
         var bidwarPopupElement = document.getElementById("bidwar-popup");
         var bidwarTitleElement = document.getElementById("bidwar-title");
         var bidwarCategoriesElement = document.getElementById("bidwar-categories-container");
-        var startEpochTimestamp = Date.now() / 1000;
 
         var runningPopup = null;
 
@@ -167,13 +166,6 @@
         }
 
         var displayNextBidwars = function () {
-            if (bidwarQueue.length == 0) {
-                bidwarPopupElement.classList.remove('animated');
-                bidwarTitleElement.innerHTML = "";
-                bidwarCategoriesElement.innerHTML = "";
-                return;
-            }
-
             // Pull the newest bidwar from the pipe and display it
             // If the bidwar is inactive, pull the next one
             let bidwar = null;
@@ -184,6 +176,9 @@
             // If we couldn't find a bidwar or the last one was inactive
             // don't show any bidwars for now
             if (bidwar == null || bidwar.closed) {
+                bidwarPopupElement.classList.remove('animated');
+                bidwarTitleElement.innerHTML = "";
+                bidwarCategoriesElement.innerHTML = "";
                 return;
             }
 

@@ -3,7 +3,7 @@
 <head>
     <style>
         body {
-            background-color: rgba(0, 0, 0, 1);
+            background-color: rgba(0, 0, 0, 0);
             margin: 0px auto;
             overflow: hidden;
         }
@@ -143,7 +143,6 @@
         var incentiveCategoryBarDonatedElement = document.getElementById("incentive-bar-donated");
         var incentiveCategoryDonatedElement = document.getElementById("incentive-donated");
         var incentiveCategoryTargetElement = document.getElementById("incentive-target");
-        var startEpochTimestamp = Date.now() / 1000;
 
         var runningPopup = null;
 
@@ -182,7 +181,7 @@
                             !incentive.closed &&
                             incentiveQueue.findIndex(item => item.title === incentiveCache[key].title) === -1
                         ) {
-                            incentiveQueue.push(incentive);
+                            incentiveQueue.push(incentiveCache[key]);
                         }
 
                         incentiveCache[key].closed = incentive.closed;
@@ -190,7 +189,15 @@
                     }
 
                     incentiveCache[key] = incentive;
-                    incentiveQueue.push(incentive);
+
+                    // Track whether an incentive that was reached during runtime has been shown
+                    incentive.reachedShown = false;
+
+                    // Add the incentive to the queue only if it hasn't been reached
+                    // on the first load
+                    if (!incentive.reached) {
+                        incentiveQueue.push(incentive);
+                    }
                 }
 
                 if (runningPopup == null) {
@@ -201,7 +208,17 @@
         }
 
         var displayNextIncentives = function () {
-            if (incentiveQueue.length == 0) {
+            // Pull the newest incentive from the pipe and display it
+            // If the incentive is inactive, pull the next one
+            let incentive = null;
+            do {
+                incentive = incentiveQueue.shift();
+            } while (incentiveQueue.length > 0 && incentive != null && (incentive.closed || (incentive.reached &&
+                    incentive.reachedShown)))
+
+            // If we couldn't find a incentive or the last one was closed or reached (and shown)
+            // don't show any incentives for now
+            if (incentive == null || incentive.closed || (incentive.reached && incentive.reachedShown)) {
                 incentivePopupElement.classList.remove('animated');
                 incentivePopupElement.classList.add('hidden');
                 incentiveTitleElement.innerHTML = "";
@@ -210,21 +227,14 @@
                 return;
             }
 
-            // Pull the newest incentive from the pipe and display it
-            // If the incentive is inactive, pull the next one
-            let incentive = null;
-            do {
-                incentive = incentiveQueue.shift();
-            } while (incentiveQueue.length > 0 && incentive != null && incentive.closed)
-
-            // If we couldn't find a incentive or the last one was inactive
-            // don't show any incentives for now
-            if (incentive == null || incentive.closed) {
-                return;
+            // If the incentive was reached, this is the last time it is shown
+            // Additionally it's not added to the queue so we don't get it double
+            if (incentive.reached) {
+                incentive.reachedShown = true;
+            } else {
+                // Add the incentive back to the end
+                incentiveQueue.push(incentive);
             }
-
-            // Add the incentive back to the end
-            incentiveQueue.push(incentive);
 
             incentivePopupElement.classList.add('animated');
             incentivePopupElement.classList.remove('hidden');
