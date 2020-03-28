@@ -119,6 +119,8 @@
                     let bidwar = data.bidwars[i];
                     let key = bidwar.timestamp + bidwar.author;
                     if (key in bidwarCache) {
+                        // Update the categories with new values
+                        bidwarCache[key].categories = bidwar.categories;
                         continue;
                     }
 

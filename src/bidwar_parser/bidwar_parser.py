@@ -24,6 +24,7 @@ def parse_bidwars(soup):
     find_bidwars = False
     find_title = False
     next_line_value = False
+    find_closed_line = 0
 
     # Example structure
     # ("bidwar_title", [("bidwar_category", "donation_amount"), ...])
@@ -55,20 +56,30 @@ def parse_bidwars(soup):
             find_title = True
             continue
 
+        # Find the title of the bidwar
         if find_title:
             find_title = False
+            find_closed_line = 3
             # Example line: <p>Resident Evil 2 (2019)</p></div>
             title = line.replace("<p>", "").split("<")[0]
 
             if current_bidwar is not None:
                 bidwars.append(current_bidwar)
 
-            current_bidwar = {"title": title, "categories": []}
+            current_bidwar = {"title": title, "categories": [], "closed": False}
 
+        # See if the bidwar is closed or not
+        if find_closed_line > 0:
+            find_closed_line -= 1
+            if find_closed_line == 0:
+                current_bidwar["closed"] = "Closed" in line
+
+        # Find the line that contains the values of the bidwar
         if '<div class="progress-text">' in line:
             next_line_value = True
             continue
 
+        # Parse the progress of the bidwar
         if next_line_value:
             next_line_value = False
             # Example line: Kill the Robots ($10)
