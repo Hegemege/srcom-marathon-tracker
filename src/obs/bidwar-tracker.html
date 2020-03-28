@@ -16,9 +16,8 @@
         }
 
         #bidwar-container {
-            margin-left: 1em;
+            margin-left: 5em;
             margin-right: 1em;
-            margin-bottom: 2em;
             display: flex;
             align-self: center;
             flex-direction: column;
@@ -42,6 +41,7 @@
 
         .bidwar-category-row {
             width: 500px;
+            max-width: 500px;
         }
 
         .bidwar-category-title {
@@ -50,7 +50,7 @@
 
         .bidwar-category-bar {
             height: 40px;
-            background-color: white;
+            border: solid white 2px;
             min-width: 5px;
         }
 
@@ -64,7 +64,7 @@
 
         .animated {
             animation-name: bidwar-popup;
-            animation-duration: 5s;
+            animation-duration: 15s;
             animation-iteration-count: infinite;
         }
 
@@ -108,9 +108,9 @@
 
 
     <script type="text/javascript">
-        var urlBase = "http://localhost:8090/bidwars?marathon=hek19";
-        var fetchInterval = 20 * 1000;
-        var bidwarPopupInterval = 5 * 1000;
+        var urlBase = "http://localhost:8090/bidwars?marathon=hek20";
+        var fetchInterval = 45 * 1000;
+        var bidwarPopupInterval = 15 * 1000;
 
         var bidwarCache = {};
         var bidwarQueue = []; // Bidwars to be displayed
@@ -143,6 +143,14 @@
                     if (key in bidwarCache) {
                         // Update the categories with new values
                         bidwarCache[key].categories = bidwar.categories;
+
+                        // If the bidwar used to be closed and was reopened, add it to the queue if it was removed from it
+                        if (bidwarCache[key].closed && !bidwar.closed) {
+                            if (bidwarQueue.findIndex(item => item.title === bidwarCache[key].title) === -1) {
+                                bidwarQueue.push(bidwar);
+                            }
+                        }
+
                         bidwarCache[key].closed = bidwar.closed;
                         continue;
                     }
@@ -171,13 +179,11 @@
             let bidwar = null;
             do {
                 bidwar = bidwarQueue.shift();
-            } while (bidwarQueue.length > 0 && bidwar != null && !bidwar.closed)
-
-            // TODO: Change back to bidwar.closed, remove !
+            } while (bidwarQueue.length > 0 && bidwar != null && bidwar.closed)
 
             // If we couldn't find a bidwar or the last one was inactive
             // don't show any bidwars for now
-            if (bidwar == null || !bidwar.closed) {
+            if (bidwar == null || bidwar.closed) {
                 return;
             }
 
@@ -190,7 +196,7 @@
             bidwarTitleElement.innerHTML = bidwar.title;
 
             let bidwarCategoryRowTemplate =
-                "<div class='bidwar-category-row'><span class='bidwar-category-title'>{0}</span><div style='width:{2}%' class='bidwar-category-bar'><span class='bidwar-category-donated'>{1}</span></div></div>";
+                "<div class='bidwar-category-row'><span class='bidwar-category-title'>{0}</span><div style='{2}' class='bidwar-category-bar'><span class='bidwar-category-donated'>{1}</span></div></div>";
 
             // Loop through all categories and add them under the categories element
             if (bidwar.categories.length == 0) {
@@ -198,11 +204,20 @@
                     "<div class='bidwar-category-row'><span class='bidwar-category-title'>No bids :(</span></div>";
             } else {
                 let rowHTML = "";
-                for (let category of bidwar.categories) {
+                let maxCategories = 5;
+                let categoryCount = Math.min(maxCategories, bidwar.categories.length);
+                for (let i = 0; i < categoryCount; i++) {
+                    let category = bidwar.categories[i];
+
+                    let barStyle = "width: " + (category.scale * 100) + "%;";
+                    if (category.scale === 1.0) {
+                        barStyle += "border-color: #f9ec0e;";
+                    }
+
                     rowHTML += bidwarCategoryRowTemplate
                         .replace("{0}", category.title)
                         .replace("{1}", "$" + category.donated)
-                        .replace("{2}");
+                        .replace("{2}", barStyle);
                 }
                 bidwarCategoriesElement.innerHTML = rowHTML;
             }

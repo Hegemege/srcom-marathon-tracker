@@ -106,10 +106,13 @@ def parse_bidwars(soup):
 
     # Add relative sizing to each category. [0..1] where 1 is the maximum donation category
     for bidwar in bidwars:
-        max_donated_category = max(
-            bidwar["categories"], key=lambda x: int(x["donated"])
-        )
-        max_donated = float(max_donated_category["donated"])
+        max_donated = 1.0
+
+        if len(bidwar["categories"]) > 0:
+            max_donated_category = max(
+                bidwar["categories"], key=lambda x: int(x["donated"])
+            )
+            max_donated = max(1.0, float(max_donated_category["donated"]))
 
         for category in bidwar["categories"]:
             scale = float(category["donated"]) / max_donated
