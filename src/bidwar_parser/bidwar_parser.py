@@ -104,6 +104,10 @@ def parse_bidwars(soup):
     if current_bidwar is not None:
         bidwars.append(current_bidwar)
 
+    # Sort categories in each bidwar by donated amount descending
+    for bidwar in bidwars:
+        bidwar["categories"].sort(key=lambda x: x["donated"], reverse=True)
+
     return bidwars
 
 

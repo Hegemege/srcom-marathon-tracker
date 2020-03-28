@@ -52,10 +52,11 @@
         }
 
         .bidwar-category-donated {
+            position: absolute;
+            display: inline;
             color: #f9ec0e;
             font-size: 28px;
-            right: -30px;
-            text-align: right;
+            right: calc(100% + 10px);
         }
 
         .animated {
@@ -104,7 +105,7 @@
 
 
     <script type="text/javascript">
-        var urlBase = "http://localhost:8090/bidwars?marathon=hek20";
+        var urlBase = "http://localhost:8090/bidwars?marathon=hek19";
         var fetchInterval = 20 * 1000;
         var bidwarPopupInterval = 5 * 1000;
 
@@ -167,11 +168,11 @@
             let bidwar = null;
             do {
                 bidwar = bidwarQueue.shift();
-            } while (bidwarQueue.length > 0 && bidwar != null && bidwar.closed)
+            } while (bidwarQueue.length > 0 && bidwar != null && !bidwar.closed)
 
             // If we couldn't find a bidwar or the last one was inactive
             // don't show any bidwars for now
-            if (bidwar == null || bidwar.closed) {
+            if (bidwar == null || !bidwar.closed) {
                 return;
             }
 
@@ -193,7 +194,9 @@
             } else {
                 let rowHTML = "";
                 for (let category of bidwar.categories) {
-
+                    rowHTML += bidwarCategoryRowTemplate
+                        .replace("{0}", category.title)
+                        .replace("{1}", "$" + category.donated);
                 }
                 bidwarCategoriesElement.innerHTML = rowHTML;
             }
