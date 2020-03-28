@@ -38,14 +38,17 @@ def parse_incentives(soup):
     content = list(content.children)[3]
     # content is now a long list of mumbo-jumbo containing the incentive data
 
-    # Remove last 3
+    # Remove last 3 (garbage)
     content = list(content.children)[:-3]
-    # Divide result set into groups of 6 lines
 
+    # Divide result set into groups of 6 lines
     content = [content[i * 6 : (i * 6) + 6] for i in range(len(content) // 6)]
 
     for item in content:
         incentive_title = list(item[3].children)[0].strip()
+        incentive_closed = False
+        if len(list(item[3].children)) >= 4:
+            incentive_closed = "Closed" in str(list(item[3].children)[3])
         progress_content = list(item[5].children)[1]
         progress_content = list(progress_content.children)[0].strip()
 
@@ -57,6 +60,8 @@ def parse_incentives(soup):
                 "title": incentive_title,
                 "current": incentive_current,
                 "target": incentive_target,
+                "reached": incentive_current >= incentive_target,
+                "closed": incentive_closed,
             }
         )
 
