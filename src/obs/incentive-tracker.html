@@ -3,7 +3,7 @@
 <head>
     <style>
         body {
-            background-color: rgba(0, 0, 0, 0);
+            background-color: rgba(0, 0, 0, 1);
             margin: 0px auto;
             overflow: hidden;
         }
@@ -59,7 +59,7 @@
             height: 40px;
             border-right: solid white 2px;
             min-width: 5px;
-            background-color: #f9ed0e7c;
+            background-color: #e967f0a2;
             display: flex;
             align-items: center;
         }
@@ -74,7 +74,7 @@
         #incentive-target {
             position: absolute;
             display: inline;
-            color: #f9ec0e;
+            color: #e967f0;
             font-size: 28px;
             left: calc(100% + 10px);
         }
@@ -132,7 +132,7 @@
 
 
     <script type="text/javascript">
-        var urlBase = "http://localhost:8090/incentives?marathon=hek19";
+        var urlBase = "http://localhost:8090/incentives?marathon=hek20";
         var fetchInterval = 45 * 1000;
         var incentivePopupInterval = 13 * 1000;
 
@@ -250,14 +250,14 @@
             let donatedTextWidth = incentiveCategoryDonatedElement.offsetWidth;
             incentiveCategoryDonatedElement.style.left =
                 "calc(" + (scale * 100).toString() + "% - " +
-                donatedTextWidth.toString() + "px - 7px)";
+                donatedTextWidth.toString() + "px - 9px)";
 
-            incentiveCategoryDonatedElement.style.color = "black";
+            incentiveCategoryDonatedElement.style.color = "white";
 
             // If the bar is too small, show the text on the right side instead and with yellow color
             let barWidth = incentiveCategoryBarDonatedElement.offsetWidth;
             if (barWidth < donatedTextWidth) {
-                incentiveCategoryDonatedElement.style.color = "#f9ec0e";
+                incentiveCategoryDonatedElement.style.color = "#e967f0";
                 incentiveCategoryDonatedElement.style.left = (barWidth + 10).toString() + "px";
             }
         }
