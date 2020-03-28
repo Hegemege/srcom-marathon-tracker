@@ -60,7 +60,7 @@ def parse_incentives(soup):
                 "title": incentive_title,
                 "current": incentive_current,
                 "target": incentive_target,
-                "reached": incentive_current >= incentive_target,
+                "reached": int(incentive_current) >= int(incentive_target),
                 "closed": incentive_closed,
             }
         )
