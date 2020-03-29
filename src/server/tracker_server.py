@@ -26,7 +26,10 @@ def donations():
 def bidwars():
     try:
         marathon = request.args.get("marathon")
+        title_filter = request.args.get("filter")
         bidwars = get_bidwars(marathon)
+        if title_filter is not None:
+            bidwars = list(filter(lambda x: title_filter in x["title"], bidwars))
         return jsonify(bidwars=bidwars)
     except:
         return handle_error()

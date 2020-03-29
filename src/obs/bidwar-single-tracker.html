@@ -1,0 +1,249 @@
+<html>
+
+<head>
+    <style>
+        body {
+            background-color: rgba(0, 0, 0, 1);
+            margin: 0px auto;
+            overflow: hidden;
+        }
+
+        #main-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+
+        #bidwar-container {
+            margin-left: 5em;
+            margin-right: 1em;
+            display: flex;
+            align-self: center;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        #bidwar-popup {
+            align-self: flex-end;
+            position: relative;
+            display: inline;
+            bottom: 0;
+            font-size: 40px;
+            font-family: "Futura PT";
+        }
+
+        #bidwar-category-row {
+            width: 500px;
+            max-width: 500px;
+        }
+
+        .bidwar-category-title {
+            color: white;
+        }
+
+        .bidwar-category-bar {
+            height: 40px;
+            border: solid white 2px;
+            min-width: 5px;
+        }
+
+        .bidwar-category-donated {
+            position: absolute;
+            display: inline;
+            color: #f9ec0e;
+            font-size: 28px;
+            right: calc(100% + 10px);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="main-container">
+        <div id="bidwar-container">
+            <div id="bidwar-popup">
+                <div id="bidwar-categories-container">
+
+                    <div id='bidwar-category-row'>
+                        <div style='{2}' class='bidwar-category-bar'>
+                            <div class="bidwar-category-donated">
+                                <span class='bidwar-category-donated'>{1}</span>
+                                <span class="donation-popup"></span>
+                            </div>
+                        </div>
+                        <div style='{2}' class='bidwar-category-bar'>
+                            <div class="bidwar-category-donated">
+                                <span class='bidwar-category-donated'>{1}</span>
+                                <span class="donation-popup"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="text/javascript">
+        var urlBase = "http://localhost:8090/bidwars?marathon=hek20&filter=";
+        var titleFilter = "Jedi Academy";
+        var fetchInterval = 45 * 1000;
+
+        var bidwarPopupElement = document.getElementById("bidwar-popup");
+
+        var bidwarElements = {};
+        var bidwarAmounts = {};
+        var bidwarTargetAmounts = {};
+        var bidwarAnimationTime = 0.0;
+        var bidwarAnimationLength = 1.5;
+        var bidwarUpdateInterval = 1000.0 / 30.0;
+        var currentAnimation = null;
+
+        var bidwar = null;
+
+        // from https://gist.github.com/gre/1650294
+        var easeInOutCubic = function (t) {
+            return t < .5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1;
+        }
+
+        var clamp = function (value, min, max) {
+            return Math.min(Math.max(value, min), max);
+        };
+
+        var lerp = function (from, to, amount) {
+            amount = amount < 0 ? 0 : amount;
+            amount = amount > 1 ? 1 : amount;
+            return from + (to - from) * amount;
+        }
+
+        var updateBidwarsData = function () {
+            const request = new XMLHttpRequest();
+
+            // Fetches all bidwars since the given timestamp.
+            // The script will repeat bidwars from a few hours ago
+
+            request.open("GET", urlBase + encodeURI(titleFilter));
+            request.send();
+            request.onreadystatechange = e => {
+                if (e.target.readyState !== 4 || e.target.status !== 200) return;
+                if (request.responseText.length == 0) return;
+
+                let data = JSON.parse(request.responseText);
+
+                bidwar = data.bidwars[0];
+
+                // Animate the changing amount
+                if (currentAnimation != null) {
+                    endMarathonTotalAnimation();
+                }
+
+                // Make sure the keys exist
+                for (let category of bidwar.categories) {
+                    if (!bidwarAmounts.hasOwnProperty(category.title)) {
+                        bidwarAmounts[category.title] = 0;
+                    }
+
+                    if (!bidwarTargetAmounts.hasOwnProperty(category.title)) {
+                        bidwarTargetAmounts[category.title] = 0;
+                    }
+
+                    // Create the actual donation total and popup elements
+                    if (!bidwarElements.hasOwnProperty(category.title)) {
+                        bidwarElements[category.title] = 0;
+                    }
+                }
+
+                for (let category of bidwar.categories) {
+                    if (bidwarAmounts[category.title] === category.donated) {
+                        bidwarElements[category.title].innerHTML = "$" + bidwarAmounts[category.title];
+                        continue;
+                    }
+                }
+
+                for (let category of bidwar.categories) {
+                    bidwarTargetAmounts[category.title] = category.donated;
+
+                    if (category.donated > bidwarAmounts[category.title]) {
+                        displayDonationPopup(marathonTotalTargetAmount - marathonTotalAmount);
+                    }
+                }
+
+
+                currentAnimation = setInterval(animateMarathonTotalTracker,
+                    marathonTotalUpdateInterval);
+            };
+        }
+
+        var displayNextBidwars = function () {
+            if (bidwar === null) return;
+
+            // Update the bidwar title
+            bidwarTitleElement.innerHTML = bidwar.title;
+
+            let bidwarCategoryRowTemplate =
+                "<div class='bidwar-category-row'><span class='bidwar-category-title'>{0}</span><div style='{2}' class='bidwar-category-bar'><span class='bidwar-category-donated'>{1}</span></div></div>";
+
+            // Loop through all categories and add them under the categories element
+            if (bidwar.categories.length == 0) {
+                bidwarCategoriesElement.innerHTML =
+                    "<div class='bidwar-category-row'><span class='bidwar-category-title'>No bids :(</span></div>";
+            } else {
+                let rowHTML = "";
+                let maxCategories = 5;
+                let categoryCount = Math.min(maxCategories, bidwar.categories.length);
+                for (let i = 0; i < categoryCount; i++) {
+                    let category = bidwar.categories[i];
+
+                    let barStyle = "width: " + (category.scale * 100) + "%;";
+                    if (category.scale === 1.0) {
+                        barStyle += "border-color: #f9ec0e;";
+                    }
+
+                    rowHTML += bidwarCategoryRowTemplate
+                        .replace("{0}", category.title)
+                        .replace("{1}", "$" + category.donated)
+                        .replace("{2}", barStyle);
+                }
+                bidwarCategoriesElement.innerHTML = rowHTML;
+            }
+        }
+
+        var animateMarathonTotalTracker = function () {
+            marathonTotalAnimationTime += 1.0 / marathonTotalUpdateInterval;
+
+            var timeT = clamp(marathonTotalAnimationTime / marathonTotalAnimationLength, 0.0, 1.0);
+            var animationT = easeInOutCubic(timeT);
+
+            var animatedTotal = lerp(marathonTotalAmount, marathonTotalTargetAmount, animationT);
+
+            marathonTotalElement.innerHTML = "$" + Math.round(animatedTotal);
+
+            if (timeT == 1.0) {
+                endMarathonTotalAnimation();
+            }
+        }
+
+        var endMarathonTotalAnimation = function () {
+            clearInterval(currentAnimation);
+            marathonTotalAmount = marathonTotalTargetAmount;
+            marathonTotalElement.innerHTML = "$" + marathonTotalAmount;
+            marathonTotalAnimationTime = 0.0;
+        }
+
+        var displayDonationPopup = function (element, value) {
+            element.classList.add('animated');
+            element.innerHTML = "+$" + value;
+
+            setTimeout(() => {
+                element.classList.remove('animated');
+                element.innerHTML = "";
+            }, donationPopupLength);
+        }
+
+        updateBidwarsData(); // Update immediately on page load
+        setInterval(updateBidwarsData, fetchInterval); // Update after the given interval
+    </script>
+</body>
+
+</html>
