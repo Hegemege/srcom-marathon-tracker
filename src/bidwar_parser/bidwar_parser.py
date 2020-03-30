@@ -91,7 +91,7 @@ def parse_bidwars(soup):
 
             # start_index contains the opening parenthesis, thus +1
             # Another +1 to skip the currency symbol
-            donated = line[start_index + 2 : end_index]
+            donated = int(line[start_index + 2 : end_index])
 
             line_cleaned = line.strip()
             end_index = line_cleaned.rfind("(")
@@ -109,9 +109,7 @@ def parse_bidwars(soup):
         max_donated = 1.0
 
         if len(bidwar["categories"]) > 0:
-            max_donated_category = max(
-                bidwar["categories"], key=lambda x: int(x["donated"])
-            )
+            max_donated_category = max(bidwar["categories"], key=lambda x: x["donated"])
             max_donated = max(1.0, float(max_donated_category["donated"]))
 
         for category in bidwar["categories"]:
