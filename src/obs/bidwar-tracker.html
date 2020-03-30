@@ -209,7 +209,7 @@
 
                     rowHTML += bidwarCategoryRowTemplate
                         .replace("{0}", category.title)
-                        .replace("{1}", "$" + category.donated)
+                        .replace("{1}", "$" + category.donated.toString())
                         .replace("{2}", barStyle);
                 }
                 bidwarCategoriesElement.innerHTML = rowHTML;

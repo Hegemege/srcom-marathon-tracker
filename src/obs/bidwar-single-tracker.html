@@ -12,30 +12,17 @@
             height: 100%;
             display: flex;
             flex-direction: column;
-            justify-content: flex-start;
-        }
+            justify-content: center;
+            align-items: center;
 
-        #bidwar-container {
-            margin-left: 5em;
-            margin-right: 1em;
-            display: flex;
-            align-self: center;
-            flex-direction: column;
-            justify-content: flex-end;
-        }
-
-        #bidwar-popup {
-            align-self: flex-end;
-            position: relative;
-            display: inline;
-            bottom: 0;
             font-size: 40px;
             font-family: "Futura PT";
         }
 
         #bidwar-category-row {
-            width: 500px;
-            max-width: 500px;
+            width: 100%;
+            display: flex;
+            align-items: center;
         }
 
         .bidwar-category-title {
@@ -44,68 +31,135 @@
 
         .bidwar-category-bar {
             height: 40px;
-            border: solid white 2px;
+            border: solid white 1px;
             min-width: 5px;
         }
 
         .bidwar-category-donated {
-            position: absolute;
-            display: inline;
+            display: block;
             color: #f9ec0e;
             font-size: 28px;
-            right: calc(100% + 10px);
+        }
+
+        #bidwar-left {
+            color: #fa00ff;
+        }
+
+        #bidwar-right {
+            color: #51fadf;
+        }
+
+        #bidwar-left-bar {
+            border-color: #fa00ff;
+            border-right-color: white;
+        }
+
+        #bidwar-right-bar {
+            border-color: #51fadf;
+            border-left-color: white;
+        }
+
+        #bidwar-left-bar.winning {
+            animation-name: bar-left-animation-winning;
+            animation-duration: 1.5s;
+            animation-fill-mode: forwards;
+        }
+
+        #bidwar-left-bar.losing {
+            animation-name: bar-left-animation-losing;
+            animation-duration: 1.5s;
+            animation-fill-mode: forwards;
+        }
+
+        #bidwar-right-bar.winning {
+            animation-name: bar-right-animation-winning;
+            animation-duration: 1.5s;
+            animation-fill-mode: forwards;
+        }
+
+        #bidwar-right-bar.losing {
+            animation-name: bar-right-animation-losing;
+            animation-duration: 1.5s;
+            animation-fill-mode: forwards;
+        }
+
+        @keyframes bar-left-animation-winning {
+            0% {
+                background-color: rgba(0, 0, 0, 0);
+            }
+
+            100% {
+                background-color: #fa00ff50;
+            }
+        }
+
+        @keyframes bar-right-animation-winning {
+            0% {
+                background-color: rgba(0, 0, 0, 0);
+            }
+
+            100% {
+                background-color: #51fadf50;
+            }
+        }
+
+        @keyframes bar-left-animation-losing {
+            0% {
+                background-color: #fa00ff50;
+            }
+
+            100% {
+                background-color: rgba(0, 0, 0, 0);
+            }
+        }
+
+        @keyframes bar-right-animation-losing {
+            0% {
+                background-color: #51fadf50;
+            }
+
+            100% {
+                background-color: rgba(0, 0, 0, 0);
+            }
         }
     </style>
 </head>
 
 <body>
     <div id="main-container">
-        <div id="bidwar-container">
-            <div id="bidwar-popup">
-                <div id="bidwar-categories-container">
-
-                    <div id='bidwar-category-row'>
-                        <div style='{2}' class='bidwar-category-bar'>
-                            <div class="bidwar-category-donated">
-                                <span class='bidwar-category-donated'>{1}</span>
-                                <span class="donation-popup"></span>
-                            </div>
-                        </div>
-                        <div style='{2}' class='bidwar-category-bar'>
-                            <div class="bidwar-category-donated">
-                                <span class='bidwar-category-donated'>{1}</span>
-                                <span class="donation-popup"></span>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
+        <div id="bidwar-category-row">
+            <div style="text-align: right; min-width:70px; padding-right: 5px;">
+                <span id="bidwar-left" class="bidwar-category-donated"></span>
+            </div>
+            <div style="flex: 1; display: flex;">
+                <div id="bidwar-left-bar" style="flex:1;" class="bidwar-category-bar"></div>
+                <div id="bidwar-right-bar" style="flex:1;" class="bidwar-category-bar"></div>
+            </div>
+            <div style="text-align:left; min-width:70px; padding-left: 5px;">
+                <span id="bidwar-right" class="bidwar-category-donated right"></span>
             </div>
         </div>
     </div>
 
-
     <script type="text/javascript">
-        var urlBase = "http://localhost:8090/bidwars?marathon=hek20&filter=";
+        var urlBase = "http://localhost:8090/bidwars?marathon=hek19&filter=";
         var titleFilter = "Jedi Academy";
-        var fetchInterval = 45 * 1000;
+        var fetchInterval = 15 * 1000;
 
-        var bidwarPopupElement = document.getElementById("bidwar-popup");
-
-        var bidwarElements = {};
-        var bidwarAmounts = {};
-        var bidwarTargetAmounts = {};
-        var bidwarAnimationTime = 0.0;
         var bidwarAnimationLength = 1.5;
         var bidwarUpdateInterval = 1000.0 / 30.0;
-        var currentAnimation = null;
+        var currentAnimation = {};
+
+        var animationCache = {};
 
         var bidwar = null;
 
         // from https://gist.github.com/gre/1650294
         var easeInOutCubic = function (t) {
-            return t < .5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1;
-        }
+            return t < 0.5 ?
+                4 * t * t * t :
+                (t - 1) * (2 * t - 2) * (2 * t - 2) + 1;
+        };
 
         var clamp = function (value, min, max) {
             return Math.min(Math.max(value, min), max);
@@ -115,7 +169,7 @@
             amount = amount < 0 ? 0 : amount;
             amount = amount > 1 ? 1 : amount;
             return from + (to - from) * amount;
-        }
+        };
 
         var updateBidwarsData = function () {
             const request = new XMLHttpRequest();
@@ -126,120 +180,112 @@
             request.open("GET", urlBase + encodeURI(titleFilter));
             request.send();
             request.onreadystatechange = e => {
-                if (e.target.readyState !== 4 || e.target.status !== 200) return;
-                if (request.responseText.length == 0) return;
+                if (e.target.readyState !== 4 ||
+                    e.target.status !== 200 ||
+                    request.responseText.length == 0) {
+                    return;
+                }
 
                 let data = JSON.parse(request.responseText);
 
                 bidwar = data.bidwars[0];
 
-                // Animate the changing amount
-                if (currentAnimation != null) {
-                    endMarathonTotalAnimation();
-                }
+                // Sort bidwar categories alphabetically
+                bidwar.categories.sort((a, b) =>
+                    a.title > b.title ? 1 : -1
+                );
 
                 // Make sure the keys exist
+                let elementIds = ["bidwar-left", "bidwar-right"];
+                let barElementIds = ["bidwar-left-bar", "bidwar-right-bar"];
                 for (let category of bidwar.categories) {
-                    if (!bidwarAmounts.hasOwnProperty(category.title)) {
-                        bidwarAmounts[category.title] = 0;
-                    }
+                    if (!animationCache.hasOwnProperty(category.title)) {
+                        let anim = {};
+                        animationCache[category.title] = anim;
 
-                    if (!bidwarTargetAmounts.hasOwnProperty(category.title)) {
-                        bidwarTargetAmounts[category.title] = 0;
-                    }
+                        anim.amount = category.donated;
+                        anim.target = category.donated;
 
-                    // Create the actual donation total and popup elements
-                    if (!bidwarElements.hasOwnProperty(category.title)) {
-                        bidwarElements[category.title] = 0;
+                        anim.animationTime = 0.0;
+                        anim.currentAnimation = null;
+
+                        if (elementIds.length > 0) {
+                            let elementId = elementIds.shift();
+                            anim.element = document.getElementById(elementId);
+
+                            let barElementId = barElementIds.shift();
+                            anim.barElement = document.getElementById(barElementId);
+                        }
                     }
                 }
 
+                // End any existing animations
                 for (let category of bidwar.categories) {
-                    if (bidwarAmounts[category.title] === category.donated) {
-                        bidwarElements[category.title].innerHTML = "$" + bidwarAmounts[category.title];
+                    if (animationCache[category.title].currentAnimation != null) {
+                        endAnimation(animationCache[category.title]);
+                    }
+                }
+
+                // If the amount hasn't changed, don't animate
+                for (let category of bidwar.categories) {
+                    if (animationCache[category.title].amount === category.donated) {
+                        animationCache[category.title].element.innerHTML = "$" + animationCache[category.title]
+                            .amount.toString();
                         continue;
                     }
                 }
 
+                // Set targets
                 for (let category of bidwar.categories) {
-                    bidwarTargetAmounts[category.title] = category.donated;
+                    animationCache[category.title].target = category.donated;
+                }
 
-                    if (category.donated > bidwarAmounts[category.title]) {
-                        displayDonationPopup(marathonTotalTargetAmount - marathonTotalAmount);
+                // Set winning side
+                let maxAmount = Math.max.apply(Math, bidwar.categories.map(i => i.donated));
+                for (let category of bidwar.categories) {
+                    if (category.donated < maxAmount) {
+                        animationCache[category.title].barElement.classList.add("losing");
+                        animationCache[category.title].barElement.classList.remove("winning");
+                    } else {
+                        animationCache[category.title].barElement.classList.add("winning");
+                        animationCache[category.title].barElement.classList.remove("losing");
                     }
                 }
 
-
-                currentAnimation = setInterval(animateMarathonTotalTracker,
-                    marathonTotalUpdateInterval);
+                // Start animations
+                for (let category of bidwar.categories) {
+                    animationCache[category.title].currentAnimation = setInterval(
+                        animateBidwarAmountTracker,
+                        bidwarUpdateInterval,
+                        animationCache[category.title]
+                    );
+                }
             };
-        }
+        };
 
-        var displayNextBidwars = function () {
-            if (bidwar === null) return;
+        var animateBidwarAmountTracker = function (animation) {
+            animation.animationTime += 1.0 / bidwarUpdateInterval;
 
-            // Update the bidwar title
-            bidwarTitleElement.innerHTML = bidwar.title;
+            let timeT = clamp(animation.animationTime / bidwarAnimationLength, 0.0, 1.0);
+            let animationT = easeInOutCubic(timeT);
 
-            let bidwarCategoryRowTemplate =
-                "<div class='bidwar-category-row'><span class='bidwar-category-title'>{0}</span><div style='{2}' class='bidwar-category-bar'><span class='bidwar-category-donated'>{1}</span></div></div>";
+            let animatedTotal = lerp(animation.amount, animation.target, animationT);
 
-            // Loop through all categories and add them under the categories element
-            if (bidwar.categories.length == 0) {
-                bidwarCategoriesElement.innerHTML =
-                    "<div class='bidwar-category-row'><span class='bidwar-category-title'>No bids :(</span></div>";
-            } else {
-                let rowHTML = "";
-                let maxCategories = 5;
-                let categoryCount = Math.min(maxCategories, bidwar.categories.length);
-                for (let i = 0; i < categoryCount; i++) {
-                    let category = bidwar.categories[i];
-
-                    let barStyle = "width: " + (category.scale * 100) + "%;";
-                    if (category.scale === 1.0) {
-                        barStyle += "border-color: #f9ec0e;";
-                    }
-
-                    rowHTML += bidwarCategoryRowTemplate
-                        .replace("{0}", category.title)
-                        .replace("{1}", "$" + category.donated)
-                        .replace("{2}", barStyle);
-                }
-                bidwarCategoriesElement.innerHTML = rowHTML;
-            }
-        }
-
-        var animateMarathonTotalTracker = function () {
-            marathonTotalAnimationTime += 1.0 / marathonTotalUpdateInterval;
-
-            var timeT = clamp(marathonTotalAnimationTime / marathonTotalAnimationLength, 0.0, 1.0);
-            var animationT = easeInOutCubic(timeT);
-
-            var animatedTotal = lerp(marathonTotalAmount, marathonTotalTargetAmount, animationT);
-
-            marathonTotalElement.innerHTML = "$" + Math.round(animatedTotal);
+            animation.element.innerHTML = "$" + Math.round(animatedTotal);
+            animation.barElement.style.flex = animatedTotal;
 
             if (timeT == 1.0) {
-                endMarathonTotalAnimation();
+                endAnimation(animation);
             }
-        }
+        };
 
-        var endMarathonTotalAnimation = function () {
-            clearInterval(currentAnimation);
-            marathonTotalAmount = marathonTotalTargetAmount;
-            marathonTotalElement.innerHTML = "$" + marathonTotalAmount;
-            marathonTotalAnimationTime = 0.0;
-        }
-
-        var displayDonationPopup = function (element, value) {
-            element.classList.add('animated');
-            element.innerHTML = "+$" + value;
-
-            setTimeout(() => {
-                element.classList.remove('animated');
-                element.innerHTML = "";
-            }, donationPopupLength);
-        }
+        var endAnimation = function (animation) {
+            clearInterval(animation.currentAnimation);
+            animation.amount = animation.target;
+            animation.element.innerHTML = "$" + animation.amount;
+            animation.barElement.style.flex = animation.amount;
+            animation.animationTime = 0.0;
+        };
 
         updateBidwarsData(); // Update immediately on page load
         setInterval(updateBidwarsData, fetchInterval); // Update after the given interval
