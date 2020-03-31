@@ -219,10 +219,19 @@
                     }
                 }
 
+                // Figure out if both donation totals are 0 - force the bars to have equal size so flex 1 in this case
+                let nonZero = false;
+                for (let category of bidwar.categories) {
+                    if (category.donated !== 0) {
+                        nonZero = true;
+                        break;
+                    }
+                }
+
                 // End any existing animations
                 for (let category of bidwar.categories) {
                     if (animationCache[category.title].currentAnimation != null) {
-                        endAnimation(animationCache[category.title]);
+                        endAnimation(animationCache[category.title], !nonZero);
                     }
                 }
 
@@ -257,13 +266,14 @@
                     animationCache[category.title].currentAnimation = setInterval(
                         animateBidwarAmountTracker,
                         bidwarUpdateInterval,
-                        animationCache[category.title]
+                        animationCache[category.title],
+                        !nonZero
                     );
                 }
             };
         };
 
-        var animateBidwarAmountTracker = function (animation) {
+        var animateBidwarAmountTracker = function (animation, forceFlex = false) {
             animation.animationTime += 1.0 / bidwarUpdateInterval;
 
             let timeT = clamp(animation.animationTime / bidwarAnimationLength, 0.0, 1.0);
@@ -272,18 +282,18 @@
             let animatedTotal = lerp(animation.amount, animation.target, animationT);
 
             animation.element.innerHTML = "$" + Math.round(animatedTotal);
-            animation.barElement.style.flex = animatedTotal;
+            animation.barElement.style.flexGrow = (forceFlex ? 1.0 : animatedTotal).toString();
 
             if (timeT == 1.0) {
-                endAnimation(animation);
+                endAnimation(animation, forceFlex);
             }
         };
 
-        var endAnimation = function (animation) {
+        var endAnimation = function (animation, forceFlex = false) {
             clearInterval(animation.currentAnimation);
             animation.amount = animation.target;
             animation.element.innerHTML = "$" + animation.amount;
-            animation.barElement.style.flex = animation.amount;
+            animation.barElement.style.flexGrow = (forceFlex ? 1.0 : animation.amount).toString();
             animation.animationTime = 0.0;
         };
 
