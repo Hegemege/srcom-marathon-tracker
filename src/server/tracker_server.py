@@ -40,7 +40,7 @@ def marathon_total():
     try:
         marathon = request.args.get("marathon")
         total = get_marathon_total(marathon)
-        return jsonify(total=total)
+        return jsonify(total=int(total))
     except:
         return handle_error()
 
