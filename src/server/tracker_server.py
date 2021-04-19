@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from ..donation_parser.donation_parser import get_donations
 from ..bidwar_parser.bidwar_parser import get_bidwars
+from ..bids_parser.bids_parser import get_bids
 from ..marathon_tracker.marathon_tracker import get_marathon_total
 from ..incentive_parser.incentive_parser import get_incentives
 
@@ -31,6 +32,20 @@ def bidwars():
         if title_filter is not None:
             bidwars = list(filter(lambda x: title_filter in x["title"], bidwars))
         return jsonify(bidwars=bidwars)
+    except:
+        return handle_error()
+
+
+@app.route("/esamarathon/bids")
+def esamarathon_bids():
+    try:
+        marathon = request.args.get("marathon")
+        marathon_prefix = request.args.get("marathon_prefix")
+        title_filter = request.args.get("filter")
+        bids = get_bids(marathon_prefix, marathon)
+        if title_filter is not None:
+            bids = list(filter(lambda x: title_filter in x["title"], bids))
+        return jsonify(bids=bids)
     except:
         return handle_error()
 
