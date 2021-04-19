@@ -19,7 +19,7 @@ Fetch all bidwars from Hekathon 21 and print them:
 ```
 from bidwar_parser import get_bidwars
 
-bids = get_bids("hekathon", "hek19")
+bids = get_bids("hekathon", "hek21")
 for bid in bids:
     print(bid)
 ```
@@ -27,12 +27,13 @@ for bid in bids:
 Should output:
 
 ```
-('Death Cubed', [('Kill the Robots', '10'), ('Save the Robots', '30')])
-('Resident Evil 2 (2019)', [('Arklay Sheriff', '3'), ('Casual', '0'), ('Classic (1998)', '0'), ('Noir', '0'), ('Normal', '0')])
-("Mirror's Edge Live Commentary Bias", [('Carlos', '122'), ('Juan', '117')])
-('Elder Scrolls Oblivion Character Name', [('Goodigo', '5'), ('I AM SPEED', '5'), ('I AM SPEED', '5'), ('Steamed Hams', '10')])
-('Fallout 3 Good vs. Bad Ending', [('Bad Ending', '35'), ('Good Ending', '34')])
-('Nintendogs Dog Name', [('Bombay', '16'), ('Borscht', '9'), ('Cat', '10')])
-('Uncharted 2 Skin choice', [('Chloe', '0'), ('Jeff', '0'), ('Wetsuit Elena', '2')])
-('Jedi Academy Live Commentary Bias', [('Carla', '186'), ('Juanita', '206')])
+{'name': 'Catgirl Skin', 'run': 'Dustforce DX', 'description': '', 'amount': '$0.00', 'goal': '$12.00', 'categories': []}
+{'name': 'Blindfolded Water Escape', 'run': 'Ori and the Will Of The Wisps', 'description': 'Run the Water Escape level Blindfolded.', 'amount': '$0.00', 'goal': '$17.00', 'categories': []}   
+{'name': 'Any% Showcase', 'run': 'Brigand: Oaxaca', 'description': '', 'amount': '$0.00', 'goal': '$25.00', 'categories': []}
+{'name': 'Costume Selection', 'run': 'Spider-Man (2000)', 'description': '', 'amount': '$0.00', 
+'goal': '(None)', 'categories': [{'name': 'Ben Reilly', 'run': 'Spider-Man (2000)', 'amount': '$0.00', 'goal': '(None)', 'scale': 0.0}, {'name': 'Scarlet Spidey', 'run': 'Spider-Man (2000)', 'amount': '$0.00', 'goal': '(None)', 'scale': 0.0}, {'name': 'Spider-Man', 'run': 'Spider-Man (2000)', 'amount': '$0.00', 'goal': '(None)', 'scale': 0.0}]}
+{'name': 'catJAM at the End', 'run': 'Magicka 2', 'description': '', 'amount': '$0.00', 'goal': 
+'$27.00', 'categories': []}
+{'name': 'Commentary Bias', 'run': 'Star Wars: Jedi Knight - Jedi Academy', 'description': 'Commentators are biased towards whichever team has more donations.', 'amount': '$0.00', 'goal': '(None)', 'categories': [{'name': 'Team Carla', 'run': 'Star Wars: Jedi Knight - Jedi Academy', 'amount': '$0.00', 'goal': '(None)', 'scale': 0.0}, {'name': 'Team Juanita', 'run': 'Star Wars: Jedi Knight - Jedi Academy', 'amount': '$0.00', 'goal': '(None)', 'scale': 0.0}]}
+...
 ```
