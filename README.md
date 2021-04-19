@@ -31,19 +31,6 @@ Tools for tracking the total donation amount.
 
 Tools for parsing bids/bidwars.
 
+## [Tracker server](src/server/)
 
-## Setup development environment
-Install dependencies for the trackers and the flask server
-
-```
-pip install bs4 requests
-pip install -r src/server/requirements.txt
-```
-
-Run local environment on port 8090
-```
-export FLASK_APP=src/server/wsgi.py
-flask run -p 8090
-```
-
-Trackers in `/obs` should now show some data from localhost:8090
+Flask server for serving the various trackers via an HTTP API.
