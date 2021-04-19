@@ -1,6 +1,13 @@
 # srcom-marathon-tracker
 
-Various scripts and tools useful for tracking marathons on speedrun.com
+Various scripts and tools useful for tracking marathons on speedrun.com and esamarathon.com
+
+
+# [OBS Browser sources](src/obs/)
+
+Browser source files for OBS to display trackers
+
+# `speedrun.com` trackers
 
 ## [Bidwar parser](src/bidwar_parser/)
 
@@ -18,9 +25,12 @@ Tools for parsing donation incentives.
 
 Tools for tracking the total donation amount.
 
-## [OBS Browser sources](src/obs/)
+# `esamarathon.com` trackers
 
-Browser source files for OBS to display trackers
+## [Bids parser](src/bids_parser/)
+
+Tools for parsing bids/bidwars.
+
 
 # Setup development environment
 Install dependencies for the trackers and the flask server
