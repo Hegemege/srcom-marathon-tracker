@@ -1,0 +1,310 @@
+<html>
+
+<head>
+    <style>
+        body {
+            background-color: rgba(0, 0, 0, 0);
+            margin: 0px auto;
+            overflow: hidden;
+        }
+
+        #main-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+
+            font-size: 40px;
+            font-family: "Futura PT";
+        }
+
+        #bidwar-category-row {
+            width: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        .bidwar-category-title {
+            color: white;
+        }
+
+        .bidwar-category-bar {
+            height: 40px;
+            border: solid white 1px;
+            min-width: 5px;
+        }
+
+        .bidwar-category-donated {
+            display: block;
+            color: #f9ec0e;
+            font-size: 28px;
+        }
+
+        #bidwar-left {
+            color: #fa00ff;
+        }
+
+        #bidwar-right {
+            color: #51fadf;
+        }
+
+        #bidwar-left-bar {
+            border-color: #fa00ff;
+            border-right-color: white;
+        }
+
+        #bidwar-right-bar {
+            border-color: #51fadf;
+            border-left-color: white;
+        }
+
+        #bidwar-left-bar.winning {
+            animation-name: bar-left-animation-winning;
+            animation-duration: 1.5s;
+            animation-fill-mode: forwards;
+        }
+
+        #bidwar-left-bar.losing {
+            animation-name: bar-left-animation-losing;
+            animation-duration: 1.5s;
+            animation-fill-mode: forwards;
+        }
+
+        #bidwar-right-bar.winning {
+            animation-name: bar-right-animation-winning;
+            animation-duration: 1.5s;
+            animation-fill-mode: forwards;
+        }
+
+        #bidwar-right-bar.losing {
+            animation-name: bar-right-animation-losing;
+            animation-duration: 1.5s;
+            animation-fill-mode: forwards;
+        }
+
+        @keyframes bar-left-animation-winning {
+            0% {
+                background-color: rgba(0, 0, 0, 0);
+            }
+
+            100% {
+                background-color: #fa00ff50;
+            }
+        }
+
+        @keyframes bar-right-animation-winning {
+            0% {
+                background-color: rgba(0, 0, 0, 0);
+            }
+
+            100% {
+                background-color: #51fadf50;
+            }
+        }
+
+        @keyframes bar-left-animation-losing {
+            0% {
+                background-color: #fa00ff50;
+            }
+
+            100% {
+                background-color: rgba(0, 0, 0, 0);
+            }
+        }
+
+        @keyframes bar-right-animation-losing {
+            0% {
+                background-color: #51fadf50;
+            }
+
+            100% {
+                background-color: rgba(0, 0, 0, 0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="main-container">
+        <div id="bidwar-category-row">
+            <div style="text-align: right; min-width:70px; padding-right: 5px;">
+                <span id="bidwar-left" class="bidwar-category-donated"></span>
+            </div>
+            <div style="flex: 1; display: flex;">
+                <div id="bidwar-left-bar" style="flex:1;" class="bidwar-category-bar"></div>
+                <div id="bidwar-right-bar" style="flex:1;" class="bidwar-category-bar"></div>
+            </div>
+            <div style="text-align:left; min-width:70px; padding-left: 5px;">
+                <span id="bidwar-right" class="bidwar-category-donated right"></span>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        var urlBase = "http://localhost:8090/esamarathon/bids?marathon=hek21&marathon_prefix=hekathon&filter=";
+        var titleFilter = "Mirror's Edge";
+        var fetchInterval = 15 * 1000;
+
+        var bidwarAnimationLength = 1.5;
+        var bidwarUpdateInterval = 1000.0 / 30.0;
+        var currentAnimation = {};
+
+        var animationCache = {};
+
+        var bidwar = null;
+
+        // from https://gist.github.com/gre/1650294
+        var easeInOutCubic = function (t) {
+            return t < 0.5 ?
+                4 * t * t * t :
+                (t - 1) * (2 * t - 2) * (2 * t - 2) + 1;
+        };
+
+        var clamp = function (value, min, max) {
+            return Math.min(Math.max(value, min), max);
+        };
+
+        var lerp = function (from, to, amount) {
+            amount = amount < 0 ? 0 : amount;
+            amount = amount > 1 ? 1 : amount;
+            return from + (to - from) * amount;
+        };
+
+        var updateBidwarsData = function () {
+            const request = new XMLHttpRequest();
+
+            // Fetches all bidwars since the given timestamp.
+            // The script will repeat bidwars from a few hours ago
+
+            request.open("GET", urlBase + encodeURI(titleFilter));
+            request.send();
+            request.onreadystatechange = e => {
+                if (e.target.readyState !== 4 ||
+                    e.target.status !== 200 ||
+                    request.responseText.length == 0) {
+                    return;
+                }
+
+                let data = JSON.parse(request.responseText);
+
+                bidwar = data.bids[0];
+
+                // Sort bidwar categories alphabetically
+                bidwar.categories.sort((a, b) =>
+                    a.name < b.name ? 1 : -1
+                );
+
+                // Cleanup the bid amounts
+                for (let category of bidwar.categories) {
+                    category.amount = parseInt(category.amount.replace("$", ""))
+                }
+
+                // Make sure the keys exist
+                let elementIds = ["bidwar-left", "bidwar-right"];
+                let barElementIds = ["bidwar-left-bar", "bidwar-right-bar"];
+                for (let category of bidwar.categories) {
+                    if (!animationCache.hasOwnProperty(category.name)) {
+                        let anim = {};
+                        animationCache[category.name] = anim;
+
+                        anim.amount = category.amount;
+                        anim.target = category.amount;
+
+                        anim.animationTime = 0.0;
+                        anim.currentAnimation = null;
+
+                        if (elementIds.length > 0) {
+                            let elementId = elementIds.shift();
+                            anim.element = document.getElementById(elementId);
+
+                            let barElementId = barElementIds.shift();
+                            anim.barElement = document.getElementById(barElementId);
+                        }
+                    }
+                }
+
+                // Figure out if both donation totals are 0 - force the bars to have equal size so flex 1 in this case
+                let nonZero = false;
+                for (let category of bidwar.categories) {
+                    if (category.amount !== 0) {
+                        nonZero = true;
+                        break;
+                    }
+                }
+
+                // End any existing animations
+                for (let category of bidwar.categories) {
+                    if (animationCache[category.name].currentAnimation != null) {
+                        endAnimation(animationCache[category.name], !nonZero);
+                    }
+                }
+
+                // If the amount hasn't changed, don't animate
+                for (let category of bidwar.categories) {
+                    if (animationCache[category.name].amount === category.amount) {
+                        animationCache[category.name].element.innerHTML = "$" + animationCache[category.name]
+                            .amount.toString();
+                        continue;
+                    }
+                }
+
+                // Set targets
+                for (let category of bidwar.categories) {
+                    animationCache[category.name].target = category.amount;
+                }
+
+                // Set winning side
+                let maxAmount = Math.max.apply(Math, bidwar.categories.map(i => i.amount));
+                for (let category of bidwar.categories) {
+                    if (category.amount < maxAmount) {
+                        animationCache[category.name].barElement.classList.add("losing");
+                        animationCache[category.name].barElement.classList.remove("winning");
+                    } else {
+                        animationCache[category.name].barElement.classList.add("winning");
+                        animationCache[category.name].barElement.classList.remove("losing");
+                    }
+                }
+
+                // Start animations
+                for (let category of bidwar.categories) {
+                    animationCache[category.name].currentAnimation = setInterval(
+                        animateBidwarAmountTracker,
+                        bidwarUpdateInterval,
+                        animationCache[category.name],
+                        !nonZero
+                    );
+                }
+            };
+        };
+
+        var animateBidwarAmountTracker = function (animation, forceFlex = false) {
+            animation.animationTime += 1.0 / bidwarUpdateInterval;
+
+            let timeT = clamp(animation.animationTime / bidwarAnimationLength, 0.0, 1.0);
+            let animationT = easeInOutCubic(timeT);
+
+            let animatedTotal = lerp(animation.amount, animation.target, animationT);
+
+            animation.element.innerHTML = "$" + Math.round(animatedTotal);
+            animation.barElement.style.flexGrow = (forceFlex ? 1.0 : animatedTotal).toString();
+
+            if (timeT == 1.0) {
+                endAnimation(animation, forceFlex);
+            }
+        };
+
+        var endAnimation = function (animation, forceFlex = false) {
+            clearInterval(animation.currentAnimation);
+            animation.amount = animation.target;
+            animation.element.innerHTML = "$" + animation.amount;
+            animation.barElement.style.flexGrow = (forceFlex ? 1.0 : animation.amount).toString();
+            animation.animationTime = 0.0;
+        };
+
+        updateBidwarsData(); // Update immediately on page load
+        setInterval(updateBidwarsData, fetchInterval); // Update after the given interval
+    </script>
+</body>
+
+</html>
