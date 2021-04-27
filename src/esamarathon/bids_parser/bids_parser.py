@@ -6,7 +6,7 @@ import string
 
 def main():
     print("Hekathon 2021 bids:")
-    bids = get_bids("hekathon", "hek21")
+    bids = get_esamarathon_bids("hekathon", "hek21")
     for bid in bids:
         print(bid)
 

@@ -1,0 +1,185 @@
+<html>
+
+<head>
+    <style>
+        body {
+            background-color: rgba(0, 0, 0, 0);
+            margin: 0px auto;
+            overflow: hidden;
+        }
+
+        .main-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        .donation-container {
+            margin-right: 0.5em;
+            display: flex;
+            align-self: flex-end;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        #donation-popup {
+            align-self: flex-end;
+            position: relative;
+            display: inline;
+            bottom: 0;
+            font-size: 54px;
+            font-family: "Futura XBlkCnIt BT";
+        }
+
+        #marathon-total-tracker {
+            align-self: flex-end;
+            display: inline;
+            position: relative;
+            bottom: 0;
+            color: #f9ec0e;
+            font-size: 100px;
+            font-family: "Futura XBlkCnIt BT";
+        }
+
+        .animated {
+            animation-name: donation-popup;
+            animation-duration: 3s;
+            animation-iteration-count: infinite;
+        }
+
+        @keyframes donation-popup {
+            0% {
+                bottom: -20px;
+                color: rgba(0, 0, 0, 0);
+                font-size: 20px;
+            }
+
+            20% {
+                color: rgba(0, 255, 0, 1.0);
+                font-size: 54px;
+            }
+
+            60% {
+                bottom: 0px;
+                color: rgba(83, 235, 32, 1.0);
+                font-size: 54px;
+            }
+
+            100% {
+                bottom: 20px;
+                color: rgba(255, 255, 0, 0);
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-container">
+        <div class="donation-container">
+            <span id="donation-popup"></span>
+            <span id="marathon-total-tracker"></span>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        // Note: only animates integers at the moment. Change Math.round in func animateMarathonTotalTracker to support
+        // multiple decimals and change format=float in the request params
+        var marathonTotalUrl = "http://localhost:8090/esamarathon/marathon-total?marathon_prefix=hekathon&format=int";
+        var fetchInterval = 15 * 1000; // Fetch new donation total every 10 seconds
+        var donationPopupLength = 3 * 1000; // Every donation popup stays for 3 seconds
+
+        var donationPopupElement = document.getElementById("donation-popup");
+        var marathonTotalElement = document.getElementById("marathon-total-tracker");
+
+        var marathonTotalAmount = 0;
+        var marathonTotalTargetAmount = 0;
+        var marathonTotalAnimationTime = 0.0;
+        var marathonTotalAnimationLength = 1.5;
+        var marathonTotalUpdateInterval = 1000.0 / 30.0;
+        var currentMarathonTotalAnimation = null;
+
+        // from https://gist.github.com/gre/1650294
+        var easeInOutCubic = function (t) {
+            return t < .5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1;
+        }
+
+        var clamp = function (value, min, max) {
+            return Math.min(Math.max(value, min), max);
+        };
+
+        var lerp = function (from, to, amount) {
+            amount = amount < 0 ? 0 : amount;
+            amount = amount > 1 ? 1 : amount;
+            return from + (to - from) * amount;
+        }
+
+        var updateMarathonTotalTracker = function () {
+            const request = new XMLHttpRequest();
+            request.open("GET", marathonTotalUrl);
+            request.send();
+            request.onreadystatechange = e => {
+                if (e.target.readyState !== 4 || e.target.status !== 200) return;
+                if (request.responseText.length == 0) return;
+
+                var data = JSON.parse(request.responseText);
+
+                // Animate the changing amount
+                if (currentMarathonTotalAnimation != null) {
+                    endMarathonTotalAnimation();
+                }
+
+                if (data.total == marathonTotalAmount) {
+                    marathonTotalElement.innerHTML = "$" + marathonTotalAmount;
+                    return;
+                }
+
+                if (marathonTotalTargetAmount > marathonTotalAmount) {
+                    displayDonationPopup(marathonTotalTargetAmount - marathonTotalAmount);
+                }
+
+                currentMarathonTotalAnimation = setInterval(animateMarathonTotalTracker,
+                    marathonTotalUpdateInterval);
+            };
+        }
+
+        var animateMarathonTotalTracker = function () {
+            marathonTotalAnimationTime += 1.0 / marathonTotalUpdateInterval;
+
+            var timeT = clamp(marathonTotalAnimationTime / marathonTotalAnimationLength, 0.0, 1.0);
+            var animationT = easeInOutCubic(timeT);
+
+            var animatedTotal = lerp(marathonTotalAmount, marathonTotalTargetAmount, animationT);
+
+            marathonTotalElement.innerHTML = "$" + Math.round(animatedTotal);
+
+            if (timeT == 1.0) {
+                endMarathonTotalAnimation();
+            }
+        }
+
+        var endMarathonTotalAnimation = function () {
+            clearInterval(currentMarathonTotalAnimation);
+            marathonTotalAmount = marathonTotalTargetAmount;
+            marathonTotalElement.innerHTML = "$" + marathonTotalAmount;
+            marathonTotalAnimationTime = 0.0;
+        }
+
+        var displayDonationPopup = function (value) {
+            donationPopupElement.classList.add('animated');
+            donationPopupElement.innerHTML = "+$" + value;
+
+            setTimeout(() => {
+                donationPopupElement.classList.remove('animated');
+                donationPopupElement.innerHTML = "";
+            }, donationPopupLength);
+        }
+
+        // Update immediately on page load and then on an interval
+        updateMarathonTotalTracker();
+        setInterval(updateMarathonTotalTracker, fetchInterval);
+    </script>
+</body>
+
+</html>
