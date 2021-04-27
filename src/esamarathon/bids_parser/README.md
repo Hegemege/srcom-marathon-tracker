@@ -19,7 +19,7 @@ Fetch all bidwars from Hekathon 21 and print them:
 ```
 from bidwar_parser import get_bidwars
 
-bids = get_bids("hekathon", "hek21")
+bids = get_esamarathon_bids("hekathon", "hek21")
 for bid in bids:
     print(bid)
 ```

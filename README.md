@@ -9,25 +9,29 @@ Browser source files for OBS to display trackers
 
 ## `speedrun.com` trackers
 
-### [Bidwar parser](src/bidwar_parser/)
+### [Bidwar parser](src/speedruncom/bidwar_parser/)
 
 Tools for parsing bidwars.
 
-### [Donation parser](src/donation_parser/)
+### [Donation parser](src/speedruncom/donation_parser/)
 
 Tools for parsing donations.
 
-### [Incentive parser](src/incentive_parser/)
+### [Incentive parser](src/speedruncom/incentive_parser/)
 
 Tools for parsing donation incentives.
 
-### [Marathon tracker](src/marathon_tracker/)
+### [Marathon tracker](src/speedruncom/marathon_tracker/)
 
 Tools for tracking the total donation amount.
 
 ## `esamarathon.com` trackers
 
-### [Bids parser](src/bids_parser/)
+### [Marathon tracker](src/esamarathon/marathon_tracker/)
+
+Tools for tracking the total donation amount.
+
+### [Bids parser](src/esamarathon/bids_parser/)
 
 Tools for parsing bids/bidwars.
 

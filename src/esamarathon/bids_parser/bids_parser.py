@@ -11,7 +11,7 @@ def main():
         print(bid)
 
 
-def get_bids(marathon_prefix, marathon_uri):
+def get_esamarathon_bids(marathon_prefix, marathon_uri):
     url = "https://{0}.esamarathon.com/bids/{1}".format(marathon_prefix, marathon_uri)
     response = requests.get(url, timeout=5)
     soup = BeautifulSoup(response.content, "html.parser")
