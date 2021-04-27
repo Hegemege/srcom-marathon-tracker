@@ -1,4 +1,4 @@
-# Marathon tracker
+# Marathon tracker (esamarathon.com)
 
 Python script for fetching the marathon donation total.
 
@@ -15,10 +15,10 @@ pip install -r requirements.txt
 ## Usage example
 
 ```
-from marathon_tracker import get_marathon_total
+from marathon_tracker import get_esamarathon_marathon_total
 
 print("Hekathon 2021 donations total:")
-total = get_esamarathon_marathon_total("hekathon", "hek21")
+total = get_esamarathon_marathon_total("hekathon")
 print(total)
 ```
 
