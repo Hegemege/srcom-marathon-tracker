@@ -1,0 +1,279 @@
+<html>
+
+<head>
+    <style>
+        body {
+            background-color: rgba(0, 0, 0, 0);
+            margin: 0px auto;
+            overflow: hidden;
+        }
+
+        #main-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+
+        #incentive-container {
+            margin-left: 5em;
+            margin-right: 5em;
+            display: flex;
+            align-self: center;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        #incentive-popup {
+            align-self: flex-end;
+            position: relative;
+            display: inline;
+            bottom: 0;
+            font-size: 40px;
+            font-family: "Futura PT";
+        }
+
+        #incentive-title {
+            color: #f9ec0e;
+        }
+
+        #incentive-row {
+            width: 100%;
+            max-width: 100%;
+        }
+
+        #incentive-title {
+            color: white;
+        }
+
+        #incentive-bar {
+            height: 40px;
+            border: solid white 2px;
+            min-width: 400px;
+            display: flex;
+            align-items: center;
+        }
+
+        #incentive-bar-donated {
+            display: inline-block;
+            height: 40px;
+            border-right: solid white 2px;
+            min-width: 5px;
+            background-color: #e967f0a2;
+            display: flex;
+            align-items: center;
+        }
+
+        #incentive-donated {
+            position: absolute;
+            display: inline;
+            color: black;
+            font-size: 28px;
+        }
+
+        #incentive-target {
+            position: absolute;
+            display: inline;
+            color: #e967f0;
+            font-size: 28px;
+            left: calc(100% + 10px);
+        }
+
+        .animated {
+            animation-name: incentive-popup;
+            animation-duration: 13s;
+            animation-iteration-count: infinite;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @keyframes incentive-popup {
+            0% {
+                left: -20px;
+                opacity: 0;
+            }
+
+            10% {
+                left: 0px;
+                opacity: 1;
+            }
+
+            90% {
+                left: 0px;
+                opacity: 1;
+            }
+
+            100% {
+                left: 10px;
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="main-container">
+        <div id="incentive-container">
+            <div id="incentive-popup" class="hidden">
+                <span id="incentive-title"></span>
+                <div id="incentive-row">
+                    <div id="incentive-bar">
+                        <div id="incentive-bar-donated">
+                            <span id="incentive-donated"></span>
+                        </div>
+                        <span id="incentive-target"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="text/javascript">
+        var urlBase = "http://localhost:8090/esamarathon/bids?marathon_prefix=hekathon&marathon=hek21";
+        var fetchInterval = 45 * 1000;
+        var incentivePopupInterval = 13 * 1000;
+
+        var incentiveCache = {};
+        var incentiveQueue = []; // Incentives to be displayed
+        var incentivePopupElement = document.getElementById("incentive-popup");
+        var incentiveTitleElement = document.getElementById("incentive-title");
+        var incentiveCategoryBarDonatedElement = document.getElementById("incentive-bar-donated");
+        var incentiveCategoryDonatedElement = document.getElementById("incentive-donated");
+        var incentiveCategoryTargetElement = document.getElementById("incentive-target");
+
+        var runningPopup = null;
+
+        var clamp = function (value, min, max) {
+            return Math.min(Math.max(value, min), max);
+        };
+
+        var updateIncentivesData = function () {
+            const request = new XMLHttpRequest();
+
+            // Fetches all incentives since the given timestamp.
+            // The script will repeat incentives from a few hours ago
+
+            request.open("GET", urlBase);
+            request.send();
+            request.onreadystatechange = e => {
+                if (e.target.readyState !== 4 || e.target.status !== 200) return;
+                if (request.responseText.length == 0) return;
+
+                let data = JSON.parse(request.responseText);
+
+                // Go through the received incentives and see if any are missing from the cache
+                // If they are, add them to the popup queue
+                for (let i = 0; i < data.bids.length; i++) {
+                    let incentive = data.bids[i];
+                    let key = incentive.run + " " + incentive.name;
+
+                    incentive.current = parseInt(incentive.amount.substring(1, incentive.amount.length));
+                    incentive.target = parseInt(incentive.goal.substring(1, incentive.goal.length));
+
+                    // Exclude any bids that have multiple categories (shown by bidwar tracker)
+                    if (incentive.categories.length > 0) {
+                        continue;
+                    }
+
+                    if (key in incentiveCache) {
+                        // Update the properties with new values
+                        incentiveCache[key].current = incentive.current;
+                        incentiveCache[key].target = incentive.target;
+                        incentiveCache[key].reached = incentive.current >= incentive.target;
+
+                        // If the incentive used to be closed and was reopened, add it to the queue if it was removed from it
+                        if (
+                            incentiveCache[key].closed &&
+                            !incentive.closed &&
+                            incentiveQueue.findIndex(item => item.title === incentiveCache[key].title) === -1
+                        ) {
+                            incentiveQueue.push(incentiveCache[key]);
+                        }
+
+                        incentiveCache[key].closed = incentive.closed;
+                        continue;
+                    }
+
+                    incentiveCache[key] = incentive;
+
+                    // Track whether an incentive that was reached during runtime has been shown
+                    incentive.reachedShown = false;
+
+                    // Add the incentive to the queue only if it hasn't been reached
+                    // on the first load
+                    if (!incentive.reached) {
+                        incentiveQueue.push(incentive);
+                    }
+                }
+
+                if (runningPopup == null) {
+                    displayNextIncentives();
+                    runningPopup = setInterval(displayNextIncentives, incentivePopupInterval);
+                }
+            };
+        }
+
+        var displayNextIncentives = function () {
+            // Pull the newest incentive from the pipe and display it
+            // If the incentive is inactive, pull the next one
+            let incentive = null;
+            do {
+                incentive = incentiveQueue.shift();
+            } while (incentiveQueue.length > 0 && incentive != null && (incentive.closed || (incentive.reached &&
+                    incentive.reachedShown)))
+
+            // If we couldn't find a incentive or the last one was closed or reached (and shown)
+            // don't show any incentives for now
+            if (incentive == null || incentive.closed || (incentive.reached && incentive.reachedShown)) {
+                incentivePopupElement.classList.remove('animated');
+                incentivePopupElement.classList.add('hidden');
+                incentiveTitleElement.innerHTML = "";
+                incentiveCategoryDonatedElement.innerHTML = "";
+                incentiveCategoryTargetElement.innerHTML = "";
+                return;
+            }
+
+            // If the incentive was reached, this is the last time it is shown
+            // Additionally it's not added to the queue so we don't get it double
+            if (incentive.reached) {
+                incentive.reachedShown = true;
+            } else {
+                // Add the incentive back to the end
+                incentiveQueue.push(incentive);
+            }
+
+            incentivePopupElement.classList.add('animated');
+            incentivePopupElement.classList.remove('hidden');
+
+            // Update the incentive title
+            incentiveTitleElement.innerHTML = incentive.run + ": " + incentive.name;
+            incentiveCategoryDonatedElement.innerHTML = "$" + incentive.current;
+            incentiveCategoryTargetElement.innerHTML = "$" + incentive.target;
+
+            let scale = clamp(incentive.current / incentive.target, 0.0, 1.0);
+            incentiveCategoryBarDonatedElement.style.width = (scale * 100).toString() + "%";
+
+            let donatedTextWidth = incentiveCategoryDonatedElement.offsetWidth;
+            incentiveCategoryDonatedElement.style.left =
+                "calc(" + (scale * 100).toString() + "% - " +
+                donatedTextWidth.toString() + "px - 9px)";
+
+            incentiveCategoryDonatedElement.style.color = "white";
+
+            // If the bar is too small, show the text on the right side instead and with yellow color
+            let barWidth = incentiveCategoryBarDonatedElement.offsetWidth;
+            if (barWidth < donatedTextWidth) {
+                incentiveCategoryDonatedElement.style.color = "#e967f0";
+                incentiveCategoryDonatedElement.style.left = (barWidth + 10).toString() + "px";
+            }
+        }
+
+        updateIncentivesData(); // Update immediately on page load
+        setInterval(updateIncentivesData, fetchInterval); // Update after the given interval
+    </script>
+</body>
+
+</html>
