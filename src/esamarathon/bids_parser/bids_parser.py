@@ -93,7 +93,7 @@ def parse_bids(soup):
             max_donated = max(1.0, float(max_donated_category["amount"][1:]))
 
         for category in bid["categories"]:
-            scale = float(max_donated_category["amount"][1:]) / max_donated
+            scale = float(category["amount"][1:]) / max_donated
             category["scale"] = scale
 
     # Sort categories in each bidwar by donated amount descending
