@@ -1,0 +1,193 @@
+<html>
+
+<head>
+    <style>
+        body {
+            background-color: rgba(0, 0, 0, 0);
+            margin: 0px auto;
+            overflow: hidden;
+        }
+
+        .main-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+
+        .donation-container {
+            margin-left: 1em;
+            margin-right: 1em;
+            margin-bottom: 2em;
+            display: flex;
+            align-self: center;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        #donation-popup {
+            align-self: flex-end;
+            position: relative;
+            display: inline;
+            bottom: 0;
+            font-size: 40px;
+            font-family: "Futura PT";
+        }
+
+        #donation-author {
+            color: #f9ec0e;
+            text-align: right;
+        }
+
+        #donation-message {
+            color: white;
+            text-align: left;
+        }
+
+        .animated {
+            animation-name: donation-popup;
+            animation-duration: 12s;
+            animation-iteration-count: infinite;
+        }
+
+        @keyframes donation-popup {
+            0% {
+                bottom: -20px;
+                opacity: 0;
+            }
+
+            15% {
+                bottom: 0px;
+                opacity: 1;
+            }
+
+            85% {
+                bottom: 0px;
+                opacity: 1;
+            }
+
+            100% {
+                bottom: 10px;
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-container">
+        <div class="donation-container">
+            <div id="donation-popup">
+                <span id="donation-author"></span>
+                <span id="donation-message"></span>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="text/javascript">
+        var urlBase = "http://localhost:8090/esamarathon/donations?marathon=hek21&marathon_prefix=hekathon";
+        var fetchInterval = 45 * 1000;
+        var donationPopupInterval = 12 * 1000;
+
+        var donationCache = {};
+        var donationQueue = []; // Donations to be displayed
+        var donationPopupElement = document.getElementById("donation-popup");
+        var donationAuthorElement = document.getElementById("donation-author");
+        var donationMessageElement = document.getElementById("donation-message");
+
+        var runningPopup = null;
+
+        var getEpochTimestamp = function (offsetSeconds) {
+            return Math.floor((Date.now() / 1000) + offsetSeconds);
+        }
+
+        var updateDonationsData = function () {
+            const request = new XMLHttpRequest();
+
+            // Fetches all donations since the given timestamp.
+            // Because donations need to be approved, this should be maybe
+            // 30-60 minutes behind current time in order for mods to have enough time time to update
+            // The donation cache makes sure donations aren't received multiple times
+            // -3600 is the number of seconds 1 hour ago as an offset
+            let epochTimestamp = getEpochTimestamp(-3600 * 3);
+
+            // The script will repeat donations from a few hours ago
+
+            request.open("GET", urlBase);
+            request.send();
+            request.onreadystatechange = e => {
+                if (e.target.readyState !== 4 || e.target.status !== 200) return;
+                if (request.responseText.length == 0) return;
+
+                let data = JSON.parse(request.responseText);
+
+                // Go through the received donations and see if any are missing from the cache
+                // If they are, add them to the popup queue
+                for (let i = 0; i < data.donations.length; i++) {
+                    let donation = data.donations[i];
+                    let key = donation.timestamp.toString() + donation.author;
+                    if (key in donationCache) {
+                        continue;
+                    }
+
+                    donationCache[key] = donation;
+                    donationQueue.push(donation);
+                }
+
+                // Go through the cache and assign all donations as inactive
+                // Assign all the new donations as active
+                for (let key in donationCache) {
+                    if (donationCache.hasOwnProperty(key)) {
+                        donation = donationCache[key];
+                        donation.active = false;
+                    }
+                }
+
+                for (let i = 0; i < data.donations.length; i++) {
+                    let donation = data.donations[i];
+                    let key = donation.timestamp + donation.author;
+                    donationCache[key].active = true;
+                }
+
+                if (runningPopup == null) {
+                    displayNewDonations();
+                    runningPopup = setInterval(displayNewDonations, donationPopupInterval);
+                }
+            };
+        }
+
+        var displayNewDonations = function () {
+            // Pull the newest donation from the pipe and display it
+            // If the donation is inactive, pull the next one
+            let donation = null;
+            do {
+                donation = donationQueue.shift();
+            } while (donationQueue.length > 0 && donation != null && !donation.active)
+
+            // If we couldn't find a donation or the last one was inactive
+            // don't show any donations for now
+            if (donation == null || !donation.active) {
+                donationPopupElement.classList.remove('animated');
+                donationAuthorElement.innerHTML = "";
+                donationMessageElement.innerHTML = "";
+                return;
+            }
+
+            // Add the donation back to the end
+            donationQueue.push(donation);
+
+            donationPopupElement.classList.add('animated');
+
+
+            //let message = donation.message.length > 0 ? donation.message : "(no message)";
+            donationAuthorElement.innerHTML = donation.author + " (" + donation.amount + ")";
+            donationMessageElement.innerHTML = ""; //message
+        }
+
+        updateDonationsData(); // Update immediately on page load
+        setInterval(updateDonationsData, fetchInterval); // Update after the given interval
+    </script>
+</body>
+
+</html>
