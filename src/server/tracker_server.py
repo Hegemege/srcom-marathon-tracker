@@ -8,6 +8,9 @@ from ..esamarathon.bids_parser.bids_parser import get_esamarathon_bids
 from ..esamarathon.marathon_tracker.marathon_tracker import (
     get_esamarathon_marathon_total,
 )
+from ..esamarathon.donation_parser.donation_parser import (
+    get_esamarathon_donations,
+)
 
 import traceback
 
@@ -80,6 +83,17 @@ def esamarathon_marathon_total():
         format_filter = request.args.get("format")
         total = get_esamarathon_marathon_total(marathon_prefix, format_filter == "int")
         return jsonify(total=total)
+    except:
+        return handle_error()
+
+
+@app.route("/esamarathon/donations")
+def esamarathon_donations():
+    try:
+        marathon_prefix = request.args.get("marathon_prefix")
+        marathon = request.args.get("marathon")
+        donations = get_esamarathon_donations(marathon_prefix, marathon)
+        return jsonify(donations=donations)
     except:
         return handle_error()
 
