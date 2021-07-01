@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 from ..speedruncom.donation_parser.donation_parser import get_donations
 from ..speedruncom.bidwar_parser.bidwar_parser import get_bidwars
 from ..speedruncom.marathon_tracker.marathon_tracker import get_marathon_total
@@ -15,10 +15,12 @@ from ..esamarathon.donation_parser.donation_parser import (
 import traceback
 
 app = Flask(__name__)
-CORS(app)
+cors = CORS(app)
+app.config["CORS_HEADERS"] = "Content-Type"
 
 
 @app.route("/donations")
+@cross_origin()
 def donations():
     try:
         marathon = request.args.get("marathon")
@@ -30,6 +32,7 @@ def donations():
 
 
 @app.route("/bidwars")
+@cross_origin()
 def bidwars():
     try:
         marathon = request.args.get("marathon")
@@ -43,6 +46,7 @@ def bidwars():
 
 
 @app.route("/marathon-total")
+@cross_origin()
 def marathon_total():
     try:
         marathon = request.args.get("marathon")
@@ -53,6 +57,7 @@ def marathon_total():
 
 
 @app.route("/incentives")
+@cross_origin()
 def incentives():
     try:
         marathon = request.args.get("marathon")
@@ -63,6 +68,7 @@ def incentives():
 
 
 @app.route("/esamarathon/bids")
+@cross_origin()
 def esamarathon_bids():
     try:
         marathon = request.args.get("marathon")
@@ -77,6 +83,7 @@ def esamarathon_bids():
 
 
 @app.route("/esamarathon/marathon-total")
+@cross_origin()
 def esamarathon_marathon_total():
     try:
         marathon_prefix = request.args.get("marathon_prefix")
@@ -88,6 +95,7 @@ def esamarathon_marathon_total():
 
 
 @app.route("/esamarathon/donations")
+@cross_origin()
 def esamarathon_donations():
     try:
         marathon_prefix = request.args.get("marathon_prefix")
